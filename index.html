@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物流异常看板</title>
+<style>
+  :root {
+    --bg: #f6f4f0;
+    --sidebar: #faf8f5;
+    --card: #ffffff;
+    --border: #e8e2d9;
+    --text: #2d2a26;
+    --text-2: #7a736a;
+    --accent: #c45c26;
+    --accent-light: #fdf2ec;
+    --red: #c9372d;
+    --green: #2a8f5c;
+    --amber: #d68a1c;
+    --blue: #2563eb;
+    --purple: #7c3aed;
+    --radius: 12px;
+    --sidebar-w: 232px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.55 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+
+  /* 布局 */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar {
+    width: var(--sidebar-w); flex-shrink: 0; background: var(--sidebar);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    padding: 18px 14px 14px;
+  }
+  .main { flex: 1; min-width: 0; overflow-y: auto; padding: 24px 28px 40px; }
+
+  /* 侧边栏 */
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 18px; }
+  .brand .logo {
+    width: 34px; height: 34px; border-radius: 8px; background: var(--accent);
+    display: grid; place-items: center; color: #fff; font-size: 18px;
+  }
+  .brand .title { font-size: 17px; font-weight: 700; letter-spacing: .2px; }
+  .brand .sub { font-size: 11px; color: var(--text-2); }
+
+  .nav { flex: 1; overflow-y: auto; }
+  .nav-group { margin-bottom: 18px; }
+  .nav-label { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .5px; padding: 0 10px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 9px;
+    cursor: pointer; color: var(--text-2); transition: all .15s; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: #f0ece6; color: var(--text); }
+  .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .nav-item .icon { width: 20px; text-align: center; font-size: 16px; }
+  .nav-item .count {
+    margin-left: auto; font-size: 11px; background: #fff; color: var(--text-2);
+    border: 1px solid var(--border); padding: 1px 7px; border-radius: 999px;
+  }
+  .nav-item.active .count { background: #fff; color: var(--accent); border-color: #f0d6c8; }
+
+  .user { border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto; }
+  .user-row { display: flex; align-items: center; gap: 9px; padding: 6px 10px; }
+  .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e8e2d9; display: grid; place-items: center; font-size: 12px; color: var(--text-2); }
+  .user-name { font-weight: 600; font-size: 13px; }
+  .user-role { font-size: 11px; color: var(--text-2); }
+
+  /* 主内容区通用 */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 22px; font-weight: 700; }
+  .topbar .greet { color: var(--text-2); font-size: 13px; margin-top: 2px; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .muted { color: var(--text-2); font-size: 12px; }
+
+  .btn {
+    border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 8px 14px;
+    font-size: 13px; cursor: pointer; color: var(--text); transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #a84d20; color: #fff; }
+  .btn.ghost { background: transparent; border-color: transparent; }
+  .btn.ghost:hover { background: #f0ece6; }
+
+  /* 卡片 */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .card + .card { margin-top: 18px; }
+  .section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+  /* 首页欢迎 */
+  .welcome { margin-bottom: 22px; }
+  .welcome h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .welcome p { color: var(--text-2); font-size: 14px; }
+
+  /* 统计卡片 */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; cursor: pointer; transition: all .15s; position: relative; overflow: hidden;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.05); border-color: #dcd5cc; }
+  .stat-card .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .stat-card .icon-wrap { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+  .stat-card .num { font-size: 28px; font-weight: 700; line-height: 1.2; margin-top: 10px; }
+  .stat-card .label { color: var(--text-2); font-size: 13px; margin-top: 2px; }
+  .stat-card .hint { font-size: 11px; color: var(--text-2); margin-top: 8px; }
+  .stat-card.total .icon-wrap { background: #f3f4f6; }
+  .stat-card.abnormal .icon-wrap { background: #fdecec; }
+  .stat-card.abnormal .num { color: var(--red); }
+  .stat-card.pickup .icon-wrap { background: #fff7e6; }
+  .stat-card.pickup .num { color: var(--amber); }
+  .stat-card.redispatch .icon-wrap { background: #e6f4ff; }
+  .stat-card.redispatch .num { color: var(--blue); }
+
+  /* 快速开始 */
+  .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .quick-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; cursor: pointer; transition: all .15s; display: flex; gap: 12px;
+  }
+  .quick-card:hover { border-color: var(--accent); background: #fffdfb; }
+  .quick-card .icon-wrap { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+  .quick-card .name { font-weight: 700; font-size: 14px; }
+  .quick-card .desc { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+  .quick-card .tag { font-size: 11px; color: var(--text-2); margin-top: 8px; background: #f6f4f0; display: inline-block; padding: 2px 8px; border-radius: 999px; }
+
+  /* 模块页 */
+  .module-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .module-header .left { display: flex; align-items: baseline; gap: 12px; }
+  .module-header h2 { font-size: 20px; font-weight: 700; }
+  .module-header .count { color: var(--text-2); font-size: 13px; }
+
+  /* 筛选 */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .filters select, .filters input {
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 13px;
+    background: #fff; color: var(--text); outline: none;
+  }
+  .filters input[type="search"] { width: 260px; }
+  .filters select:focus, .filters input:focus { border-color: var(--accent); }
+
+  /* 状态标签筛选 */
+  .status-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .status-tab {
+    border: 1px solid var(--border); background: #fff; border-radius: 999px; padding: 6px 13px;
+    font-size: 13px; cursor: pointer; color: var(--text-2); transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .status-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .status-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .status-tab .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+  /* 表格 */
+  .table-wrap { overflow: auto; max-height: 58vh; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+  thead th {
+    position: sticky; top: 0; background: #faf8f5; z-index: 2; text-align: left;
+    padding: 11px 12px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text-2);
+  }
+  thead th .th-sub { display: block; font-weight: 400; font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid #f0ece6; vertical-align: middle; }
+  tbody tr:hover { background: #faf8f5; }
+  tbody tr.unmatched { background: #fff5f4; }
+  tbody tr.unmatched:hover { background: #ffece9; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .badge.match { background: #dcfce7; color: #166534; }
+  .badge.nomatch { background: #fee2e2; color: #991b1b; }
+  .badge.src { background: #e0f2fe; color: #075985; }
+  .badge.src.yanwen { background: #ede9fe; color: #5b21b6; }
+  .badge.cat-abnormal { background: #fdecec; color: #991b1b; }
+  .badge.cat-pickup { background: #fff7e6; color: #92400e; }
+  .badge.cat-redispatch { background: #e6f4ff; color: #075985; }
+  .badge.cat-tail { background: #fff3e0; color: #b4530f; }
+  .badge.state-done { background: #dcfce7; color: #166534; }
+  .badge.state-pending { background: #fee2e2; color: #991b1b; }
+  .badge.state-shelf { background: #e0e7ff; color: #3730a3; }
+
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-2); }
+  .empty .big { font-size: 40px; margin-bottom: 10px; }
+  .hint { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+  .copy { cursor: pointer; color: var(--accent); font-size: 12px; margin-left: 6px; user-select: none; }
+  .row-count { font-size: 12px; color: var(--text-2); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+
+  /* 首页规则/提示 */
+  .tips { display: grid; gap: 8px; font-size: 13px; color: var(--text-2); }
+  .tips li { list-style: none; display: flex; gap: 8px; }
+  .tips li::before { content: "•"; color: var(--accent); font-weight: 700; }
+
+  /* 隐藏 */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 左侧导航 -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">📦</div>
+      <div>
+        <div class="title">物流异常看板</div>
+        <div class="sub">异常订单管理</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-label">工作台</div>
+        <div class="nav-item active" data-view="home"><span class="icon">🏠</span> 首页</div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">功能模块</div>
+        <div class="nav-item" data-view="module" data-mod=""><span class="icon">📋</span> 全部异常件 <span class="count" id="nav-all">—</span></div>
+        <div class="nav-item" data-view="module" data-mod="abnormal"><span class="icon">🏭</span> 仓内/库内异常 <span class="count" id="nav-abnormal">—</span></div>
+        <div class="nav-item" data-view="module" data-mod="tail"><span class="icon">🌐</span> 尾程/海外异常 <span class="count" id="nav-tail">—</span></div>
+        <div class="nav-item" data-view="module" data-mod="pickup"><span class="icon">📍</span> 待自提·到达待取 <span class="count" id="nav-pickup">—</span></div>
+        <div class="nav-item" data-view="module" data-mod="redispatch"><span class="icon">🔄</span> 可重派件 <span class="count" id="nav-redispatch">—</span></div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">数据</div>
+        <div class="nav-item" id="nav-export"><span class="icon">📥</span> 导出 CSV</div>
+      </div>
+    </nav>
+
+    <div class="user">
+      <div class="user-row">
+        <div class="user-avatar">E</div>
+        <div>
+          <div class="user-name">Echo</div>
+          <div class="user-role">管理员</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 右侧主内容 -->
+  <main class="main">
+    <!-- 顶部栏 -->
+    <div class="topbar">
+      <div>
+        <h1 id="page-title">物流异常订单看板</h1>
+        <div class="greet" id="page-sub">递四方 / 燕文 异常件 × 马帮订单匹配</div>
+      </div>
+      <div class="topbar-actions">
+        <span class="muted" id="generatedAt"></span>
+        <button class="btn" id="btnDemo">载入示例数据</button>
+        <button class="btn primary" id="btnReload">刷新数据</button>
+      </div>
+    </div>
+
+    <!-- 首页 -->
+    <section id="view-home">
+      <div class="welcome">
+        <h2>Hi! Echo</h2>
+        <p>欢迎回到物流异常看板，继续处理今天的异常订单匹配任务。</p>
+      </div>
+
+      <div class="stat-grid" id="home-stats">
+        <!-- 由 JS 填充 -->
+      </div>
+
+      <div class="card">
+        <div class="section-title">🚀 快速开始</div>
+        <div class="quick-grid" id="home-modules">
+          <!-- 由 JS 填充 -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">💡 使用提示</div>
+        <ul class="tips">
+          <li>看板数据由 <span class="mono">sync-abnormal.js</span> 生成 <span class="mono">public/data.json</span>，点击「刷新数据」可重新加载。</li>
+          <li>匹配优先级：货运单号 → 内部单号（平台订单号），未匹配订单在表格中以红色高亮。</li>
+          <li>点击左侧功能模块可快速切换视图；在模块页顶部可按异常状态、渠道、店铺等条件筛选。</li>
+          <li>导出 CSV 会导出当前筛选结果，文件名自动带上模块名称与日期。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 模块页 -->
+    <section id="view-module" class="hidden">
+      <div class="module-header">
+        <div class="left">
+          <h2 id="module-title">全部异常件</h2>
+          <span class="count" id="module-count">共 — 条</span>
+        </div>
+        <button class="btn" id="btnModuleCsv">📥 导出 CSV</button>
+      </div>
+
+      <div class="card">
+        <div class="filters">
+          <select id="fSource"><option value="">全部渠道</option><option value="4px">递四方 4PX</option><option value="yanwen">燕文</option></select>
+          <select id="fMatch"><option value="">匹配状态</option><option value="1">已匹配</option><option value="0">未匹配</option></select>
+          <select id="fShop"><option value="">全部店铺</option></select>
+          <input type="search" id="fKeyword" placeholder="搜索：货运单号 / 物流商单号 / 订单号 / 交易号…">
+          <button class="btn" id="btnClear">清空筛选</button>
+        </div>
+
+        <div class="status-tabs" id="statusTabs">
+          <div class="status-tab active" data-status="">全部</div>
+          <div class="status-tab" data-status="异常"><span class="dot" style="background:#991b1b"></span>异常</div>
+          <div class="status-tab" data-status="尾程异常"><span class="dot" style="background:#b4530f"></span>尾程异常</div>
+          <div class="status-tab" data-status="待自提"><span class="dot" style="background:#92400e"></span>待自提</div>
+          <div class="status-tab" data-status="可重派"><span class="dot" style="background:#075985"></span>可重派</div>
+          <div class="status-tab" data-status="已处理"><span class="dot" style="background:#166534"></span>已处理</div>
+          <div class="status-tab" data-status="待处理"><span class="dot" style="background:#991b1b"></span>待处理</div>
+          <div class="status-tab" data-status="已上架"><span class="dot" style="background:#3730a3"></span>已上架</div>
+          <div class="status-tab" data-status="unmatched"><span class="dot" style="background:#7a736a"></span>未匹配</div>
+        </div>
+
+        <div class="toolbar">
+          <span class="row-count" id="rowCount"></span>
+          <span class="hint">未匹配订单会以红色高亮显示</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>渠道</th><th>主单号<br><span class="th-sub">转单号/服务商单号</span></th><th>原始运单号</th><th>平台单号</th><th>异常状态</th><th>异常时间</th><th>匹配</th>
+                <th>马帮订单号</th><th>交易号</th><th>店铺名</th><th>尾程名称<br><span class="th-sub">服务商</span></th><th>尾程网站<br><span class="th-sub">官网反馈指引</span></th><th>尾程电话<br><span class="th-sub">服务商联系方式</span></th><th>截止处理时间</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const SAMPLE = {
+  generatedAt: '2026-08-26T15:00:00+08:00（示例）',
+  stats: { total: 6, matched: 4, unmatched: 2, sources: ['4px', 'yanwen'] },
+  matched: [
+    { source:'4px', trackNumber:'LP01234567890123', internalNo:'MB202608260001', status:'未妥投-收件人地址错误', time:'2026-08-26 09:12', category:'异常', matched:true, matchedKey:'trackNumber', platformOrderId:'PO-2026-0801-0001', platformTransactionId:'TX-A123456789', shopName:'Echo跨境店', platform:'速卖通', country:'US', buyerName:'John Smith', orderCost:23.5, currencyId:'USD' },
+    { source:'4px', trackNumber:'LP02345678901234', internalNo:'MB202608260002', status:'退回-海关查验失败', time:'2026-08-25 22:40', category:'异常', matched:true, matchedKey:'trackNumber', platformOrderId:'PO-2026-0801-0002', platformTransactionId:'TX-B234567890', shopName:'Echo跨境店', platform:'eBay', country:'DE', buyerName:'Anna Müller', orderCost:45.0, currencyId:'EUR' },
+    { source:'yanwen', trackNumber:'YW1234567890CN', internalNo:'MB202608260003', status:'运输超时-长时间未更新轨迹', time:'2026-08-25 16:05', category:'待自提', matched:true, matchedKey:'trackNumber', platformOrderId:'PO-2026-0801-0003', platformTransactionId:'TX-C345678901', shopName:'星辰出海店', platform:'Temu', country:'GB', buyerName:'Oliver King', orderCost:12.8, currencyId:'GBP' },
+    { source:'yanwen', trackNumber:'YW2345678901CN', internalNo:'MB202608260004', status:'派送失败-地址错误', time:'2026-08-26 08:20', category:'可重派', matched:true, matchedKey:'internalNo(orderId)', platformOrderId:'PO-2026-0801-0004', platformTransactionId:'TX-D456789012', shopName:'星辰出海店', platform:'TikTok Shop', country:'FR', buyerName:'Marie Dubois', orderCost:31.2, currencyId:'EUR' },
+  ],
+  unmatched: [
+    { source:'4px', trackNumber:'LP03456789012345', internalNo:'EX20260826-ALPHA', status:'无此货-单号未录入系统', time:'2026-08-26 10:33', category:'异常', matched:false, matchedKey:'', raw:{ 备注:'疑似线下发货，马帮无此单' } },
+    { source:'yanwen', trackNumber:'YW3456789012CN', internalNo:'', status:'收件人拒收', time:'2026-08-25 14:10', category:'待自提', matched:false, matchedKey:'', raw:{ 备注:'需人工确认是否为恶意拒收' } },
+  ],
+  all: []
+};
+SAMPLE.all = [...SAMPLE.matched, ...SAMPLE.unmatched];
+
+let DATA = null;
+let shopOptions = [];
+let currentView = 'home'; // 'home' | 'module'
+let currentModule = '';   // '' | 'abnormal' | 'pickup' | 'redispatch'
+let currentStatus = '';   // '' | '异常' | '待自提' | '可重派' | '已处理' | '待处理' | '已上架' | 'unmatched'
+
+const MODULE_OF = { '异常': 'abnormal', '异常件': 'abnormal', '尾程异常': 'tail', '待自提': 'pickup', '可重派': 'redispatch' };
+function moduleOf(cat) { return MODULE_OF[cat] || 'other'; }
+const MODULE_META = {
+  '':        { name: '全部异常件', icon: '📋', color: 'total', desc: '所有异常订单汇总' },
+  abnormal:  { name: '仓内/库内异常件', icon: '🏭', color: 'abnormal', desc: '燕文仓内异常 · 递四方库内异常' },
+  pickup:    { name: '待自提 · 到达待取', icon: '📍', color: 'pickup', desc: '燕文待领取 · 递四方到达待取' },
+  tail:      { name: '尾程/海外异常', icon: '🌐', color: 'abnormal', desc: '递四方海外退件 · 海关查验 · 服务商异常反馈' },
+  redispatch:{ name: '可重派件', icon: '🔄', color: 'redispatch', desc: '所有可重派的件' },
+  other:     { name: '其他', icon: '📄', color: 'total', desc: '' },
+};
+
+function el(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function srcBadge(src) {
+  const cls = src === 'yanwen' ? 'src yanwen' : 'src';
+  const label = src === 'yanwen' ? '燕文' : '递四方';
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function categoryBadge(cat) {
+  const m = moduleOf(cat);
+  const cls = m === 'abnormal' ? 'cat-abnormal' : m === 'pickup' ? 'cat-pickup' : m === 'redispatch' ? 'cat-redispatch' : m === 'tail' ? 'cat-tail' : 'src';
+  return `<span class="badge ${cls}">${esc(cat || '—')}</span>`;
+}
+
+function statusBadge(status) {
+  const s = String(status || '');
+  let cls = 'state-done';
+  if (s === '待处理') cls = 'state-pending';
+  else if (s === '已上架') cls = 'state-shelf';
+  else if (!s) return '';
+  return `<span class="badge ${cls}">${esc(s)}</span>`;
+}
+
+function computeStats() {
+  const all = DATA?.all || [];
+  const modCount = { '': all.length, abnormal: 0, tail: 0, pickup: 0, redispatch: 0, other: 0 };
+  const modSrc = { abnormal: {'4px':0,yanwen:0}, tail: {'4px':0,yanwen:0}, pickup: {'4px':0,yanwen:0}, redispatch: {'4px':0,yanwen:0}, other: {'4px':0,yanwen:0} };
+  all.forEach(r => {
+    const m = moduleOf(r.category);
+    modCount[m]++;
+    if (modSrc[m]) modSrc[m][r.source] = (modSrc[m][r.source] || 0) + 1;
+  });
+  return { modCount, modSrc };
+}
+
+function renderHomeStats() {
+  const { modCount, modSrc } = computeStats();
+  const s = DATA?.stats || {};
+  const srcLine = m => `燕文 ${modSrc[m]?.yanwen || 0} · 递四方 ${modSrc[m]?.['4px'] || 0}`;
+
+  el('home-stats').innerHTML = `
+    <div class="stat-card total" data-mod="">
+      <div class="top"><div class="icon-wrap">📋</div></div>
+      <div class="num">${modCount['']}</div>
+      <div class="label">全部异常件</div>
+      <div class="hint">异常订单总数</div>
+    </div>
+    <div class="stat-card abnormal" data-mod="abnormal">
+      <div class="top"><div class="icon-wrap">🏭</div></div>
+      <div class="num">${modCount.abnormal}</div>
+      <div class="label">仓内/库内异常件</div>
+      <div class="hint">${srcLine('abnormal')}</div>
+    </div>
+    <div class="stat-card abnormal" data-mod="tail">
+      <div class="top"><div class="icon-wrap">🌐</div></div>
+      <div class="num">${modCount.tail}</div>
+      <div class="label">尾程/海外异常</div>
+      <div class="hint">${srcLine('tail')}</div>
+    </div>
+    <div class="stat-card pickup" data-mod="pickup">
+      <div class="top"><div class="icon-wrap">📍</div></div>
+      <div class="num">${modCount.pickup}</div>
+      <div class="label">待自提 · 到达待取</div>
+      <div class="hint">${srcLine('pickup')}</div>
+    </div>
+    <div class="stat-card redispatch" data-mod="redispatch">
+      <div class="top"><div class="icon-wrap">🔄</div></div>
+      <div class="num">${modCount.redispatch}</div>
+      <div class="label">可重派件</div>
+      <div class="hint">${srcLine('redispatch')}</div>
+    </div>
+    <div class="stat-card total" data-mod="">
+      <div class="top"><div class="icon-wrap">✅</div></div>
+      <div class="num">${s.matched || 0}</div>
+      <div class="label">已匹配马帮</div>
+      <div class="hint">匹配率 ${s.total ? Math.round(s.matched/s.total*100) : 0}%</div>
+    </div>
+    <div class="stat-card abnormal" data-mod="">
+      <div class="top"><div class="icon-wrap">⚠️</div></div>
+      <div class="num">${s.unmatched || 0}</div>
+      <div class="label">未匹配订单</div>
+      <div class="hint">需人工复核</div>
+    </div>
+  `;
+
+  document.querySelectorAll('#home-stats .stat-card').forEach(card => {
+    card.onclick = () => switchModule(card.dataset.mod);
+  });
+}
+
+function renderHomeModules() {
+  const { modCount } = computeStats();
+  const items = ['', 'abnormal', 'tail', 'pickup', 'redispatch'];
+  el('home-modules').innerHTML = items.map(key => {
+    const m = MODULE_META[key];
+    return `
+      <div class="quick-card" data-mod="${key}">
+        <div class="icon-wrap" style="background:var(--bg)">${m.icon}</div>
+        <div>
+          <div class="name">${m.name}</div>
+          <div class="desc">${m.desc}</div>
+          <div class="tag">${modCount[key]} 条待处理</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.querySelectorAll('#home-modules .quick-card').forEach(c => {
+    c.onclick = () => switchModule(c.dataset.mod);
+  });
+}
+
+function renderNavCounts() {
+  const { modCount } = computeStats();
+  el('nav-all').textContent = modCount[''];
+  el('nav-abnormal').textContent = modCount.abnormal;
+  el('nav-tail').textContent = modCount.tail;
+  el('nav-pickup').textContent = modCount.pickup;
+  el('nav-redispatch').textContent = modCount.redispatch;
+}
+
+function renderFilters() {
+  const shops = new Set();
+  (DATA?.all || []).forEach(r => { if (r.shopName) shops.add(r.shopName); });
+  shopOptions = [...shops].sort();
+  el('fShop').innerHTML = '<option value="">全部店铺</option>' +
+    shopOptions.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+}
+
+function rowHtml(r) {
+  const matched = r.matched || (r.platformOrderId ? true : false);
+  const trCls = matched ? '' : 'unmatched';
+  const badge = matched
+    ? '<span class="badge match">已匹配</span>'
+    : '<span class="badge nomatch">未匹配</span>';
+  const cn = v => v ? `<span class="mono">${esc(v)}</span>` : '—';
+  const copy = v => v ? `<span class="copy" onclick="copyText('${esc(v)}', this)">复制</span>` : '';
+  const link = (url, text) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(text || url)}</a>` : '—';
+  const isYanwen = r.source === 'yanwen';
+  const nameVal  = isYanwen ? r.lastMileName  : r.provider;
+  const webVal   = isYanwen ? r.lastMileWebsite : r.guideUrl;
+  const phoneVal = isYanwen ? r.lastMilePhone : r.contact;
+  const webHtml  = isYanwen ? link(webVal, '打开网站') : link(webVal, '反馈指引');
+  return `<tr class="${trCls}">
+    <td>${srcBadge(r.source)}</td>
+    <td>${cn(r.trackNumber)}${copy(r.trackNumber)}</td>
+    <td>${cn(r.waybillNo)}${copy(r.waybillNo)}</td>
+    <td>${cn(r.internalNo)}${copy(r.internalNo)}</td>
+    <td>${categoryBadge(r.category)} ${statusBadge(r.status)}</td>
+    <td>${esc(r.time || '—')}</td>
+    <td>${badge}</td>
+    <td>${cn(r.platformOrderId)}</td>
+    <td>${cn(r.platformTransactionId)}</td>
+    <td>${esc(r.shopName || '—')}</td>
+    <td>${esc(nameVal || '—')}</td>
+    <td>${webHtml}</td>
+    <td>${cn(phoneVal)}${copy(phoneVal)}</td>
+    <td>${esc(r.deadline || '—')}</td>
+  </tr>`;
+}
+
+function getFilteredRows() {
+  const src = el('fSource').value, match = el('fMatch').value, shop = el('fShop').value;
+  const kw = el('fKeyword').value.trim().toLowerCase();
+  return (DATA?.all || []).filter(r => {
+    if (currentModule && moduleOf(r.category) !== currentModule) return false;
+    if (src && r.source !== src) return false;
+    const m = r.matched || (r.platformOrderId ? true : false);
+    if (match && String(m) !== match) return false;
+    if (shop && r.shopName !== shop) return false;
+    if (currentStatus) {
+      if (currentStatus === 'unmatched') { if (m) return false; }
+      else if (Object.keys(MODULE_OF).includes(currentStatus)) { if (r.category !== currentStatus) return false; }
+      else { if (r.status !== currentStatus) return false; }
+    }
+    if (kw) {
+      const hay = [r.trackNumber, r.waybillNo, r.internalNo, r.logisticsNo, r.platformOrderId, r.platformTransactionId, r.shopName, r.buyerName, r.status, r.category,
+        r.lastMileName, r.lastMileWebsite, r.lastMilePhone, r.provider, r.guideUrl, r.contact, r.deadline]
+        .join(' ').toLowerCase();
+      if (!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+}
+
+function renderTable() {
+  const rows = getFilteredRows();
+  el('tbody').innerHTML = rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="13" class="empty">没有符合条件的数据</td></tr>`;
+  el('rowCount').textContent = `共 ${rows.length} 条`;
+  const meta = MODULE_META[currentModule || ''];
+  el('module-count').textContent = `共 ${rows.length} 条`;
+}
+
+function switchView(view) {
+  currentView = view;
+  el('view-home').classList.toggle('hidden', view !== 'home');
+  el('view-module').classList.toggle('hidden', view !== 'module');
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => {
+    n.classList.toggle('active', n.dataset.view === view && (view === 'home' || n.dataset.mod === currentModule));
+  });
+  if (view === 'home') {
+    el('page-title').textContent = '物流异常订单看板';
+    el('page-sub').textContent = '递四方 / 燕文 异常件 × 马帮订单匹配';
+    renderHomeStats();
+    renderHomeModules();
+  }
+}
+
+function switchModule(mod) {
+  currentModule = mod;
+  currentStatus = '';
+  switchView('module');
+  const meta = MODULE_META[mod || ''];
+  el('page-title').textContent = meta.name;
+  el('page-sub').textContent = meta.desc;
+  el('module-title').textContent = meta.name;
+  document.querySelectorAll('.status-tab').forEach(t => t.classList.toggle('active', t.dataset.status === ''));
+  renderTable();
+}
+
+function refreshUI() {
+  renderNavCounts();
+  renderFilters();
+  if (currentView === 'home') {
+    renderHomeStats();
+    renderHomeModules();
+  } else {
+    renderTable();
+  }
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch('data.json', { cache: 'no-store' });
+    if (!resp.ok) throw new Error(resp.status);
+    DATA = await resp.json();
+  } catch (e) {
+    const embed = document.getElementById('embed-data');
+    if (embed && embed.textContent.trim()) {
+      try { DATA = JSON.parse(embed.textContent); } catch (_) { DATA = null; }
+    } else {
+      DATA = null;
+    }
+  }
+  if (DATA && (DATA.all || DATA.matched)) {
+    if (!DATA.all) DATA.all = [...(DATA.matched || []), ...(DATA.unmatched || [])];
+    el('generatedAt').textContent = '数据时间：' + (DATA.generatedAt || '') + '（data.json）';
+    refreshUI();
+  } else {
+    el('home-stats').innerHTML = `<div class="stat-card total"><div class="top"><div class="icon-wrap">📭</div></div><div class="num">—</div><div class="label">等待同步数据</div></div>`;
+    el('home-modules').innerHTML = '';
+    el('tbody').innerHTML = `<tr><td colspan="13" class="empty"><div class="big">📭</div>还没有数据<br>运行 <span class="mono">node sync-abnormal.js</span> 采集并匹配后刷新，或点击右上角「载入示例数据」预览效果</td></tr>`;
+  }
+}
+
+function copyText(txt, elm) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const old = elm.textContent; elm.textContent = '✅';
+    setTimeout(() => elm.textContent = old, 1200);
+  });
+}
+
+function exportCsv() {
+  const rows = getFilteredRows();
+  if (!rows.length) { alert('当前筛选没有数据可导出'); return; }
+  const meta = MODULE_META[currentModule || ''];
+  const modName = currentModule ? meta.name + '_' : '';
+  const head = ['模块','渠道','主单号','原始运单号','平台单号','异常状态','处理状态','异常时间','匹配','马帮订单号','交易号','店铺名','尾程名称/服务商','尾程网站/官网指引','尾程电话/联系方式','截止处理时间'];
+  const lines = rows.map(r => {
+    const isYanwen = r.source === 'yanwen';
+    const nameVal  = isYanwen ? r.lastMileName  : r.provider;
+    const webVal   = isYanwen ? r.lastMileWebsite : r.guideUrl;
+    const phoneVal = isYanwen ? r.lastMilePhone : r.contact;
+    return [
+      MODULE_META[moduleOf(r.category)]?.name || '',
+      isYanwen ? '燕文' : '递四方', r.trackNumber, r.waybillNo, r.internalNo, r.category, r.status, r.time,
+      (r.matched || r.platformOrderId) ? '已匹配' : '未匹配', r.platformOrderId, r.platformTransactionId,
+      r.shopName, nameVal, webVal, phoneVal, r.deadline
+    ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
+  });
+  const blob = new Blob(['\ufeff' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '异常订单_' + modName + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+/* 事件绑定 */
+document.querySelectorAll('.nav-item[data-view]').forEach(n => {
+  n.onclick = () => {
+    if (n.dataset.view === 'home') switchView('home');
+    else switchModule(n.dataset.mod);
+  };
+});
+
+el('nav-export').onclick = exportCsv;
+el('btnReload').onclick = loadData;
+el('btnDemo').onclick = () => { DATA = JSON.parse(JSON.stringify(SAMPLE)); switchView('home'); refreshUI(); };
+el('btnModuleCsv').onclick = exportCsv;
+el('btnClear').onclick = () => {
+  ['fSource','fMatch','fShop'].forEach(id => el(id).value = '');
+  el('fKeyword').value = '';
+  currentStatus = '';
+  document.querySelectorAll('.status-tab').forEach(t => t.classList.toggle('active', t.dataset.status === ''));
+  renderTable();
+};
+document.querySelectorAll('.status-tab').forEach(t => {
+  t.onclick = () => {
+    currentStatus = t.dataset.status;
+    document.querySelectorAll('.status-tab').forEach(x => x.classList.toggle('active', x === t));
+    renderTable();
+  };
+});
+['fSource','fMatch','fShop','fKeyword'].forEach(id => el(id).onchange = renderTable);
+el('fKeyword').oninput = renderTable;
+
+loadData();
+</script>
+</body>
+</html>
