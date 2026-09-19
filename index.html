@@ -189,6 +189,69 @@
   .bal-note { font-size: 11px; color: var(--text-2); margin-top: 10px; }
   .bal-empty { color: var(--text-2); font-size: 13px; }
   .bal-updated { font-size: 11px; font-weight: 400; color: var(--text-2); margin-left: auto; font-family: var(--mono); }
+  .bal-more { font-size: 12px; font-weight: 500; color: var(--accent); cursor: pointer; margin-left: 12px; white-space: nowrap; }
+  .bal-more:hover { text-shadow: 0 0 10px rgba(34, 211, 248, .6); }
+
+  /* ===== 账户余额监控模块 ===== */
+  .bd-alert {
+    display: flex; align-items: flex-start; gap: 10px; border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;
+    background: linear-gradient(90deg, rgba(255, 95, 87, .14), rgba(255, 95, 87, .04));
+    border: 1px solid rgba(255, 95, 87, .34); color: #ffb3ae; font-size: 13px; line-height: 1.6;
+  }
+  .bd-alert.ok {
+    background: linear-gradient(90deg, rgba(34, 224, 161, .12), rgba(34, 224, 161, .03));
+    border-color: rgba(34, 224, 161, .3); color: #7ff0c4;
+  }
+  .bd-alert .ico { font-size: 16px; line-height: 1.3; }
+
+  .bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; margin-bottom: 18px; }
+  .bd-card {
+    position: relative; border: 1px solid var(--border); border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(14, 34, 58, .86) 0%, rgba(9, 22, 40, .86) 100%);
+    padding: 18px 20px 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, .35); overflow: hidden;
+  }
+  .bd-card::before {
+    content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent 72%);
+  }
+  .bd-card.yw::before { background: linear-gradient(90deg, var(--green), transparent 72%); }
+  .bd-card.neg::before { background: linear-gradient(90deg, var(--red), transparent 72%); }
+  .bd-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .bd-head .nm { font-size: 16px; font-weight: 700; }
+  .bd-head .acct { font-size: 12px; color: var(--text-2); font-family: var(--mono); }
+  .bd-head .spacer { flex: 1; }
+  .bd-chip {
+    font-size: 11px; padding: 2px 9px; border-radius: 999px; font-family: var(--mono);
+    background: rgba(56, 189, 248, .12); border: 1px solid rgba(56, 189, 248, .3); color: var(--accent);
+  }
+  .bd-chip.warn { background: rgba(255, 95, 87, .14); border-color: rgba(255, 95, 87, .34); color: #ff8b84; }
+  .bd-chip.ok { background: rgba(34, 224, 161, .14); border-color: rgba(34, 224, 161, .3); color: #5cf0bf; }
+  .bd-amount { font-family: var(--mono); font-size: 34px; font-weight: 700; line-height: 1.15; margin: 12px 0 2px; letter-spacing: -1px; }
+  .bd-amount .cur { font-size: 13px; font-weight: 500; color: var(--text-2); margin-left: 8px; letter-spacing: 0; }
+  .bd-card.neg .bd-amount { color: var(--red); text-shadow: 0 0 22px rgba(255, 95, 87, .4); }
+  .bd-card.ok .bd-amount { color: var(--green); text-shadow: 0 0 22px rgba(34, 224, 161, .34); }
+  .bd-sub { font-size: 12px; color: var(--text-2); }
+
+  .bd-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 16px; }
+  .bd-field { background: rgba(8, 22, 40, .66); border: 1px solid rgba(56, 189, 248, .1); border-radius: 8px; padding: 9px 11px; }
+  .bd-field .k { font-size: 11px; color: var(--text-2); }
+  .bd-field .v { font-family: var(--mono); font-size: 14px; font-weight: 600; margin-top: 3px; word-break: break-word; overflow-wrap: anywhere; }
+
+  .bd-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 14px; }
+  .bd-table th { text-align: left; color: var(--accent); font-weight: 600; padding: 7px 9px; border-bottom: 1px solid rgba(56, 189, 248, .18); font-size: 11px; letter-spacing: .3px; }
+  .bd-table td { padding: 7px 9px; border-bottom: 1px solid rgba(56, 189, 248, .08); font-family: var(--mono); }
+  .bd-table tr:last-child td { border-bottom: none; }
+  .bd-table .main-row { background: rgba(34, 211, 238, .07); }
+  .bd-table .main-row td { color: var(--accent); font-weight: 600; }
+  .bd-table td.neg { color: var(--red); }
+  .bd-table td.pos { color: var(--green); }
+
+  .bd-spark { margin-top: 14px; }
+  .bd-spark .lbl { font-size: 11px; color: var(--text-2); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .bd-spark svg { display: block; width: 100%; height: 54px; }
+
+  .bd-meta { font-size: 11px; color: var(--text-2); line-height: 1.9; }
+  .bd-meta code { font-family: var(--mono); color: #9fc7e6; background: rgba(56, 189, 248, .08); padding: 1px 5px; border-radius: 4px; }
 
   /* 快速开始 */
   .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
@@ -302,6 +365,11 @@
       </div>
 
       <div class="nav-group">
+        <div class="nav-label">监控</div>
+        <div class="nav-item" data-view="balance"><span class="icon">💰</span> 账户余额 <span class="count" id="nav-balance">—</span></div>
+      </div>
+
+      <div class="nav-group">
         <div class="nav-label">数据</div>
         <div class="nav-item" id="nav-export"><span class="icon">📥</span> 导出 CSV</div>
       </div>
@@ -345,7 +413,7 @@
       </div>
 
       <div class="card">
-        <div class="section-title">💰 渠道账户余额 <span class="bal-updated" id="bal-updated"></span></div>
+        <div class="section-title">💰 渠道账户余额 <span class="bal-updated" id="bal-updated"></span><span class="bal-more" id="bal-more">查看详情 →</span></div>
         <div class="bal-grid" id="home-balances">
           <!-- 由 JS 填充 -->
         </div>
@@ -368,6 +436,11 @@
           <li>导出 CSV 会导出当前筛选结果，文件名自动带上模块名称与日期。</li>
         </ul>
       </div>
+    </section>
+
+    <!-- 账户余额监控 -->
+    <section id="view-balance" class="hidden">
+      <div id="balance-body"><!-- 由 renderBalanceView() 填充 --></div>
     </section>
 
     <!-- 模块页 -->
@@ -631,6 +704,158 @@ function renderHomeModules() {
   });
 }
 
+/* ==================== 账户余额监控模块 ==================== */
+const BAL_MIN_YANWEN = 0;      // 燕文可用余额低于此值告警（CNY）
+const BAL_MIN_4PX = 10000;     // 递四方主币种可用余额低于此值告警（单位 = 主币种，默认 USD）
+
+/** 按阈值判定当前余额预警项（与后端 notify-balance.js 口径保持一致） */
+function balanceAlerts() {
+  const out = [];
+  for (const b of (DATA && DATA.balances) || []) {
+    const avail = Number(b.available);
+    if (b.available === null || b.available === undefined || !isFinite(avail)) {
+      out.push({ code: b.source + ':nodata', level: 'warn', text: `${b.name}：未取到余额数据` });
+      continue;
+    }
+    const min = b.source === 'yanwen' ? BAL_MIN_YANWEN : BAL_MIN_4PX;
+    if (avail < min) {
+      out.push({
+        code: b.source + ':low',
+        level: 'danger',
+        text: `${b.name} ${b.currency} 可用余额 ${fmtMoney(avail, b.currency)}，低于阈值 ${fmtMoney(min, b.currency)}`
+          + (b.source === 'yanwen' && avail < 0 ? '（欠费状态，建议尽快充值）' : ''),
+      });
+    }
+    if (b.source === '4px' && Number(b.arrearCount) > 0) {
+      out.push({ code: '4px:arrear', level: 'warn', text: `${b.name} 存在 ${b.arrearCount} 笔欠费` });
+    }
+  }
+  return out;
+}
+
+/** 迷你趋势折线（无依赖 SVG） */
+function sparkSvg(records, color) {
+  const vals = records.map(r => Number(r.available)).filter(v => isFinite(v));
+  if (vals.length < 2) return '';
+  const W = 100, H = 54, PAD = 5;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) || Math.abs(max) || 1;
+  const pts = vals.map((v, i) => [
+    PAD + (i * (W - PAD * 2)) / (vals.length - 1),
+    H - PAD - ((v - min) / span) * (H - PAD * 2),
+  ]);
+  const line = pts.map(p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ');
+  const areaPts = `${PAD},${H - PAD} ${line} ${W - PAD},${H - PAD}`;
+  const zeroY = (min <= 0 && max >= 0) ? (H - PAD - ((0 - min) / span) * (H - PAD * 2)).toFixed(2) : null;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    ${zeroY !== null ? `<line x1="0" y1="${zeroY}" x2="${W}" y2="${zeroY}" stroke="rgba(255,95,87,.55)" stroke-width="0.6" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>` : ''}
+    <polygon points="${areaPts}" fill="${color}" opacity="0.12"/>
+    <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+    ${pts.map(p => `<circle cx="${p[0].toFixed(2)}" cy="${p[1].toFixed(2)}" r="1.3" fill="${color}"/>`).join('')}
+  </svg>`;
+}
+
+function renderBalanceView() {
+  const box = el('balance-body');
+  if (!box) return;
+  const list = (DATA && DATA.balances) || [];
+  const hist = (DATA && DATA.balanceHistory) || [];
+  const fetchedAt = String((DATA && DATA.balancesFetchedAt) || '').replace('T', ' ').slice(0, 19);
+  const mainCur = (list.find(b => b.source === '4px') || {}).currency || 'USD';
+
+  if (!list.length) {
+    box.innerHTML = `<div class="card"><div class="empty"><div class="big">💰</div>暂无余额数据
+      <div class="hint">先运行 <span class="mono">./start-debug-chrome.sh</span> 启动可接管的 Chrome（登录一次），
+      再执行 <span class="mono">node fetch-balance.js</span> 采集</div></div></div>`;
+    return;
+  }
+
+  const alerts = balanceAlerts();
+
+  /* ① 预警条 */
+  const alertHtml = alerts.length
+    ? `<div class="bd-alert"><span class="ico">⚠️</span><div><b>${alerts.length} 项余额预警</b><br>${
+        alerts.map(a => esc(a.text)).join('<br>')}</div></div>`
+    : `<div class="bd-alert ok"><span class="ico">✅</span><div>各渠道余额均高于告警阈值
+        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}）</div></div>`;
+
+  /* ② 每渠道明细卡 */
+  const cards = list.map(b => {
+    const avail = Number(b.available);
+    const isYw = b.source === 'yanwen';
+    const min = isYw ? BAL_MIN_YANWEN : BAL_MIN_4PX;
+    const low = isFinite(avail) && avail < min;
+
+    const fields = [];
+    if (isYw) {
+      fields.push(['未出账单', fmtMoney(b.unsettled, b.currency)]);
+      fields.push(['变动额', fmtMoney(b.changed, b.currency)]);
+      fields.push(['应付金额', fmtMoney(b.payableAmount, b.currency)]);
+      fields.push(['应付日期', esc(b.payableDate || '—')]);
+    } else {
+      fields.push(['账户余额', fmtMoney(b.accountBalance, b.currency)]);
+      fields.push(['冻结金额', fmtMoney(b.frozen, b.currency)]);
+      fields.push(['授信额度', fmtMoney(b.credit, b.currency)]);
+      fields.push(['欠费笔数', (b.arrearCount === null || b.arrearCount === undefined ? '—' : b.arrearCount) + ' 笔']);
+    }
+    fields.push(['告警阈值', fmtMoney(min, b.currency)]);
+    if (b.customerName) fields.push(['业务主体', esc(b.customerName)]);
+
+    const rows = (b.byCurrency || []).map(c => `<tr class="${c.currency === b.currency ? 'main-row' : ''}">
+        <td>${esc(c.currency)}${c.currency === b.currency ? ' ★' : ''}</td>
+        <td class="${Number(c.available) < 0 ? 'neg' : 'pos'}">${fmtMoney(c.available, c.currency)}</td>
+        <td>${fmtMoney(c.account, c.currency)}</td>
+        <td>${fmtMoney(c.frozen, c.currency)}</td>
+        <td>${fmtMoney(c.credit, c.currency)}</td>
+      </tr>`).join('');
+    const curTable = rows
+      ? `<table class="bd-table">
+          <thead><tr><th>币种</th><th>可用余额</th><th>账户余额</th><th>冻结</th><th>授信</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`
+      : '';
+
+    const recs = hist.filter(r => r.source === b.source);
+    const spark = recs.length >= 2
+      ? `<div class="bd-spark">
+          <div class="lbl"><span>近 ${recs.length} 个采集日趋势</span><span>${esc(recs[0].date)} → ${esc(recs[recs.length - 1].date)}</span></div>
+          ${sparkSvg(recs, low ? '#ff5f57' : '#22e0a1')}
+        </div>`
+      : `<div class="bd-spark"><div class="lbl"><span>趋势</span><span>数据积累中（每天采集后自动生成折线）</span></div></div>`;
+
+    return `<div class="bd-card ${isYw ? 'yw' : 'px'}${low ? ' neg' : ' ok'}">
+      <div class="bd-head">
+        <span class="nm">${esc(b.name)}</span>
+        <span class="acct">${esc(b.account || '')}</span>
+        <span class="spacer"></span>
+        <span class="bd-chip">${esc(b.currency || '')}</span>
+        <span class="bd-chip ${low ? 'warn' : 'ok'}">${low ? '低于阈值' : '正常'}</span>
+      </div>
+      <div class="bd-amount">${fmtMoney(b.available, b.currency)}<span class="cur">${esc(b.currency || '')} 可用余额</span></div>
+      <div class="bd-sub">采集时间 ${esc(fetchedAt || '—')}</div>
+      <div class="bd-fields">${fields.map(([k, v]) =>
+        `<div class="bd-field"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+      ${curTable}
+      ${spark}
+    </div>`;
+  }).join('');
+
+  /* ③ 监控说明 */
+  const metaCard = `<div class="card">
+    <div class="section-title">📌 监控说明</div>
+    <div class="bd-meta">
+      • 采集方式：接管已登录的 Chrome（<code>./start-debug-chrome.sh</code>）后执行 <code>node fetch-balance.js</code>，全程只读。<br>
+      • 燕文：<code>POST portal.yw56.com.cn/csc/bill/getBillBalance</code>（businessType=0 小包专线）+ <code>getPayableAmount</code><br>
+      • 递四方：<code>GET order.4px.com/order/personal_center/queryAccountInfo</code> + <code>queryArrearCount</code>（主币种 <code>${esc(mainCur)}</code>）<br>
+      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code><br>
+      • 飞书推送开关 <code>BALANCE_ALERT_ENABLED</code>；每日 19:05 自动化会顺带刷新本页数据。<br>
+      • 余额历史快照存于 <code>data/balance-history.json</code>，随每日采集累积，用于画上面的趋势线。
+    </div>
+  </div>`;
+
+  box.innerHTML = alertHtml + `<div class="bd-grid">${cards}</div>` + metaCard;
+}
+
 function renderNavCounts() {
   const { modCount } = computeStats();
   el('nav-all').textContent = modCount[''];
@@ -638,6 +863,15 @@ function renderNavCounts() {
   el('nav-tail').textContent = modCount.tail;
   el('nav-pickup').textContent = modCount.pickup;
   el('nav-redispatch').textContent = modCount.redispatch;
+  // 余额预警数：>0 时标红，侧边栏一眼能看出异常
+  const nb = el('nav-balance');
+  if (nb) {
+    const n = balanceAlerts().length;
+    nb.textContent = n ? `${n} 项预警` : '正常';
+    nb.style.color = n ? 'var(--red)' : '';
+    nb.style.borderColor = n ? 'rgba(255,95,87,.34)' : '';
+    nb.style.background = n ? 'rgba(255,95,87,.14)' : '';
+  }
 }
 
 function renderFilters() {
@@ -716,8 +950,9 @@ function switchView(view) {
   currentView = view;
   el('view-home').classList.toggle('hidden', view !== 'home');
   el('view-module').classList.toggle('hidden', view !== 'module');
+  el('view-balance').classList.toggle('hidden', view !== 'balance');
   document.querySelectorAll('.nav-item[data-view]').forEach(n => {
-    n.classList.toggle('active', n.dataset.view === view && (view === 'home' || n.dataset.mod === currentModule));
+    n.classList.toggle('active', n.dataset.view === view && (view === 'home' || view === 'balance' || n.dataset.mod === currentModule));
   });
   if (view === 'home') {
     el('page-title').textContent = '物流异常订单看板';
@@ -725,6 +960,10 @@ function switchView(view) {
     renderHomeStats();
     renderHomeBalances();
     renderHomeModules();
+  } else if (view === 'balance') {
+    el('page-title').textContent = '账户余额监控';
+    el('page-sub').textContent = '燕文 / 递四方 渠道账户余额 · 阈值告警 · 历史趋势';
+    renderBalanceView();
   }
 }
 
@@ -747,6 +986,8 @@ function refreshUI() {
     renderHomeStats();
     renderHomeBalances();
     renderHomeModules();
+  } else if (currentView === 'balance') {
+    renderBalanceView();
   } else {
     renderTable();
   }
@@ -774,6 +1015,7 @@ async function loadData() {
     if (el('home-balances')) el('home-balances').innerHTML = '<div class="bal-empty">暂无余额数据</div>';
     if (el('bal-updated')) el('bal-updated').textContent = '';
     if (el('bal-note')) el('bal-note').textContent = '';
+    if (el('balance-body')) el('balance-body').innerHTML = '';
     el('home-modules').innerHTML = '';
     el('tbody').innerHTML = `<tr><td colspan="13" class="empty"><div class="big">📭</div>还没有数据<br>运行 <span class="mono">node sync-abnormal.js</span> 采集并匹配后刷新，或点击右上角「载入示例数据」预览效果</td></tr>`;
   }
@@ -815,11 +1057,13 @@ function exportCsv() {
 document.querySelectorAll('.nav-item[data-view]').forEach(n => {
   n.onclick = () => {
     if (n.dataset.view === 'home') switchView('home');
+    else if (n.dataset.view === 'balance') switchView('balance');
     else switchModule(n.dataset.mod);
   };
 });
 
 el('nav-export').onclick = exportCsv;
+el('bal-more').onclick = () => switchView('balance');
 el('btnReload').onclick = loadData;
 el('btnDemo').onclick = () => { DATA = JSON.parse(JSON.stringify(SAMPLE)); switchView('home'); refreshUI(); };
 el('btnModuleCsv').onclick = exportCsv;
