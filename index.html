@@ -113,6 +113,27 @@
   .stat-card.redispatch .icon-wrap { background: #e6f4ff; }
   .stat-card.redispatch .num { color: var(--blue); }
 
+  /* 渠道账户余额 */
+  .bal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .bal-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+    background: linear-gradient(180deg, #fff 0%, #fdfcfb 100%);
+  }
+  .bal-card.yw { border-left: 3px solid var(--green); }
+  .bal-card.px { border-left: 3px solid var(--accent); }
+  .bal-card.neg { background: #fff8f7; border-color: #f0d5d2; }
+  .bal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .bal-name { font-weight: 700; font-size: 14px; }
+  .bal-acct { font-size: 11px; color: var(--text-2); }
+  .bal-amount { font-size: 26px; font-weight: 700; margin-top: 6px; line-height: 1.2; }
+  .bal-card.neg .bal-amount { color: var(--red); }
+  .bal-card:not(.neg) .bal-amount { color: var(--green); }
+  .bal-cur { font-size: 12px; font-weight: 500; color: var(--text-2); margin-left: 6px; }
+  .bal-sub { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+  .bal-note { font-size: 11px; color: var(--text-2); margin-top: 10px; }
+  .bal-empty { color: var(--text-2); font-size: 13px; }
+  .bal-updated { font-size: 11px; font-weight: 400; color: var(--text-2); margin-left: auto; }
+
   /* 快速开始 */
   .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
   .quick-card {
@@ -261,6 +282,14 @@
 
       <div class="stat-grid" id="home-stats">
         <!-- 由 JS 填充 -->
+      </div>
+
+      <div class="card">
+        <div class="section-title">💰 渠道账户余额 <span class="bal-updated" id="bal-updated"></span></div>
+        <div class="bal-grid" id="home-balances">
+          <!-- 由 JS 填充 -->
+        </div>
+        <div class="bal-note" id="bal-note"></div>
       </div>
 
       <div class="card">
@@ -459,6 +488,68 @@ function renderHomeStats() {
   });
 }
 
+/* ---------- 渠道账户余额 ---------- */
+const CUR_SYMBOL = { CNY: '¥', USD: '$', HKD: 'HK$', EUR: '€', GBP: '£', JPY: '¥' };
+
+function fmtMoney(v, cur) {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = Number(v);
+  if (!isFinite(n)) return '—';
+  const sym = CUR_SYMBOL[cur] || (cur ? cur + ' ' : '');
+  const abs = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (n < 0 ? '-' : '') + sym + abs;
+}
+
+function renderHomeBalances() {
+  const box = el('home-balances');
+  if (!box) return;
+  const list = (DATA && DATA.balances) || [];
+  const upd = el('bal-updated');
+  const note = el('bal-note');
+
+  if (!list.length) {
+    box.innerHTML = '<div class="bal-empty">暂无余额数据 —— 运行 <span class="mono">node fetch-balance.js</span> 采集后刷新</div>';
+    if (upd) upd.textContent = '';
+    if (note) note.textContent = '';
+    return;
+  }
+
+  if (upd) upd.textContent = '余额采集时间 ' + String(DATA.balancesFetchedAt || DATA.generatedAt || '').replace('T', ' ').slice(0, 19);
+
+  box.innerHTML = list.map(b => {
+    const avail = Number(b.available);
+    const neg = isFinite(avail) && avail < 0;
+    const isYw = b.source === 'yanwen';
+    const sub = [];
+    if (isYw) {
+      sub.push('未出账单 ' + fmtMoney(b.unsettled, b.currency));
+      if (b.payableAmount) sub.push('应付 ' + fmtMoney(b.payableAmount, b.currency) + '（' + (b.payableDate || '—') + '）');
+    } else {
+      const others = (b.byCurrency || [])
+        .filter(x => x.currency !== b.currency && Number(x.available))
+        .map(x => x.currency + ' ' + fmtMoney(x.available, x.currency));
+      if (others.length) sub.push('其他币种 ' + others.join(' · '));
+      sub.push('欠费 ' + (b.arrearCount === null || b.arrearCount === undefined ? '—' : b.arrearCount) + ' 笔');
+    }
+    return `
+      <div class="bal-card ${isYw ? 'yw' : 'px'}${neg ? ' neg' : ''}">
+        <div class="bal-head">
+          <span class="bal-name">${b.name || (isYw ? '燕文' : '递四方')}</span>
+          <span class="bal-acct mono">${b.account || ''}</span>
+        </div>
+        <div class="bal-amount">${fmtMoney(b.available, b.currency)}<span class="bal-cur">${b.currency || ''}</span></div>
+        <div class="bal-sub">${sub.join(' · ')}</div>
+      </div>`;
+  }).join('');
+
+  if (note) {
+    const negs = list.filter(b => Number(b.available) < 0);
+    note.textContent = negs.length
+      ? '⚠️ ' + negs.map(b => b.name).join('、') + ' 可用余额为负（欠费），请及时充值，否则可能影响下单。'
+      : '余额抓取自渠道后台（只读），每日随同步任务更新。';
+  }
+}
+
 function renderHomeModules() {
   const { modCount } = computeStats();
   const items = ['', 'abnormal', 'tail', 'pickup', 'redispatch'];
@@ -572,6 +663,7 @@ function switchView(view) {
     el('page-title').textContent = '物流异常订单看板';
     el('page-sub').textContent = '递四方 / 燕文 异常件 × 马帮订单匹配';
     renderHomeStats();
+    renderHomeBalances();
     renderHomeModules();
   }
 }
@@ -593,6 +685,7 @@ function refreshUI() {
   renderFilters();
   if (currentView === 'home') {
     renderHomeStats();
+    renderHomeBalances();
     renderHomeModules();
   } else {
     renderTable();
@@ -618,6 +711,9 @@ async function loadData() {
     refreshUI();
   } else {
     el('home-stats').innerHTML = `<div class="stat-card total"><div class="top"><div class="icon-wrap">📭</div></div><div class="num">—</div><div class="label">等待同步数据</div></div>`;
+    if (el('home-balances')) el('home-balances').innerHTML = '<div class="bal-empty">暂无余额数据</div>';
+    if (el('bal-updated')) el('bal-updated').textContent = '';
+    if (el('bal-note')) el('bal-note').textContent = '';
     el('home-modules').innerHTML = '';
     el('tbody').innerHTML = `<tr><td colspan="13" class="empty"><div class="big">📭</div>还没有数据<br>运行 <span class="mono">node sync-abnormal.js</span> 采集并匹配后刷新，或点击右上角「载入示例数据」预览效果</td></tr>`;
   }
