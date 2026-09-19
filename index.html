@@ -177,6 +177,7 @@
   }
   .bal-card.yw { border-left: 3px solid var(--green); box-shadow: -1px 0 14px rgba(34, 224, 161, .16); }
   .bal-card.px { border-left: 3px solid var(--accent); box-shadow: -1px 0 14px rgba(34, 211, 238, .16); }
+  .bal-card.hh { border-left: 3px solid var(--purple); box-shadow: -1px 0 14px rgba(167, 139, 250, .18); }
   .bal-card.neg { background: linear-gradient(180deg, rgba(64, 20, 24, .55) 0%, rgba(10, 24, 42, .7) 100%); border-color: rgba(255, 95, 87, .4); }
   .bal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .bal-name { font-weight: 700; font-size: 14px; }
@@ -215,6 +216,7 @@
     background: linear-gradient(90deg, var(--accent), transparent 72%);
   }
   .bd-card.yw::before { background: linear-gradient(90deg, var(--green), transparent 72%); }
+  .bd-card.hh::before { background: linear-gradient(90deg, var(--purple), transparent 72%); }
   .bd-card.neg::before { background: linear-gradient(90deg, var(--red), transparent 72%); }
   .bd-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .bd-head .nm { font-size: 16px; font-weight: 700; }
@@ -652,11 +654,14 @@ function renderHomeBalances() {
   box.innerHTML = list.map(b => {
     const avail = Number(b.available);
     const neg = isFinite(avail) && avail < 0;
-    const isYw = b.source === 'yanwen';
+    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : 'px');
     const sub = [];
-    if (isYw) {
+    if (b.source === 'yanwen') {
       sub.push('未出账单 ' + fmtMoney(b.unsettled, b.currency));
       if (b.payableAmount) sub.push('应付 ' + fmtMoney(b.payableAmount, b.currency) + '（' + (b.payableDate || '—') + '）');
+    } else if (b.source === 'hh') {
+      sub.push('押金 ' + fmtMoney(b.deposit, b.currency));
+      sub.push('剩余信用 ' + fmtMoney(b.creditRemaining, b.currency));
     } else {
       const others = (b.byCurrency || [])
         .filter(x => x.currency !== b.currency && Number(x.available))
@@ -665,9 +670,9 @@ function renderHomeBalances() {
       sub.push('欠费 ' + (b.arrearCount === null || b.arrearCount === undefined ? '—' : b.arrearCount) + ' 笔');
     }
     return `
-      <div class="bal-card ${isYw ? 'yw' : 'px'}${neg ? ' neg' : ''}">
+      <div class="bal-card ${cls}${neg ? ' neg' : ''}">
         <div class="bal-head">
-          <span class="bal-name">${b.name || (isYw ? '燕文' : '递四方')}</span>
+          <span class="bal-name">${b.name || '—'}</span>
           <span class="bal-acct mono">${b.account || ''}</span>
         </div>
         <div class="bal-amount">${fmtMoney(b.available, b.currency)}<span class="bal-cur">${b.currency || ''}</span></div>
@@ -707,6 +712,14 @@ function renderHomeModules() {
 /* ==================== 账户余额监控模块 ==================== */
 const BAL_MIN_YANWEN = 0;      // 燕文可用余额低于此值告警（CNY）
 const BAL_MIN_4PX = 10000;     // 递四方主币种可用余额低于此值告警（单位 = 主币种，默认 USD）
+const BAL_MIN_HUAHAN = 0;      // 华翰运费余额低于此值告警（CNY）
+
+/** 各渠道告警阈值（与后端 notify-balance.js 口径保持一致） */
+function balanceMin(b) {
+  if (b.source === 'yanwen') return BAL_MIN_YANWEN;
+  if (b.source === 'hh') return BAL_MIN_HUAHAN;
+  return BAL_MIN_4PX;
+}
 
 /** 按阈值判定当前余额预警项（与后端 notify-balance.js 口径保持一致） */
 function balanceAlerts() {
@@ -717,13 +730,13 @@ function balanceAlerts() {
       out.push({ code: b.source + ':nodata', level: 'warn', text: `${b.name}：未取到余额数据` });
       continue;
     }
-    const min = b.source === 'yanwen' ? BAL_MIN_YANWEN : BAL_MIN_4PX;
+    const min = balanceMin(b);
     if (avail < min) {
       out.push({
         code: b.source + ':low',
         level: 'danger',
         text: `${b.name} ${b.currency} 可用余额 ${fmtMoney(avail, b.currency)}，低于阈值 ${fmtMoney(min, b.currency)}`
-          + (b.source === 'yanwen' && avail < 0 ? '（欠费状态，建议尽快充值）' : ''),
+          + (avail < 0 ? '（欠费状态，建议尽快充值）' : ''),
       });
     }
     if (b.source === '4px' && Number(b.arrearCount) > 0) {
@@ -777,13 +790,14 @@ function renderBalanceView() {
     ? `<div class="bd-alert"><span class="ico">⚠️</span><div><b>${alerts.length} 项余额预警</b><br>${
         alerts.map(a => esc(a.text)).join('<br>')}</div></div>`
     : `<div class="bd-alert ok"><span class="ico">✅</span><div>各渠道余额均高于告警阈值
-        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}）</div></div>`;
+        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}、华翰 ≥ ${fmtMoney(BAL_MIN_HUAHAN, 'CNY')}）</div></div>`;
 
   /* ② 每渠道明细卡 */
   const cards = list.map(b => {
     const avail = Number(b.available);
     const isYw = b.source === 'yanwen';
-    const min = isYw ? BAL_MIN_YANWEN : BAL_MIN_4PX;
+    const isHh = b.source === 'hh';
+    const min = balanceMin(b);
     const low = isFinite(avail) && avail < min;
 
     const fields = [];
@@ -792,6 +806,10 @@ function renderBalanceView() {
       fields.push(['变动额', fmtMoney(b.changed, b.currency)]);
       fields.push(['应付金额', fmtMoney(b.payableAmount, b.currency)]);
       fields.push(['应付日期', esc(b.payableDate || '—')]);
+    } else if (isHh) {
+      fields.push(['押金', fmtMoney(b.deposit, b.currency)]);
+      fields.push(['总信用额度', fmtMoney(b.creditTotal, b.currency)]);
+      fields.push(['剩余信用额度', fmtMoney(b.creditRemaining, b.currency)]);
     } else {
       fields.push(['账户余额', fmtMoney(b.accountBalance, b.currency)]);
       fields.push(['冻结金额', fmtMoney(b.frozen, b.currency)]);
@@ -823,7 +841,7 @@ function renderBalanceView() {
         </div>`
       : `<div class="bd-spark"><div class="lbl"><span>趋势</span><span>数据积累中（每天采集后自动生成折线）</span></div></div>`;
 
-    return `<div class="bd-card ${isYw ? 'yw' : 'px'}${low ? ' neg' : ' ok'}">
+    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : 'px')}${low ? ' neg' : ' ok'}">
       <div class="bd-head">
         <span class="nm">${esc(b.name)}</span>
         <span class="acct">${esc(b.account || '')}</span>
@@ -831,7 +849,7 @@ function renderBalanceView() {
         <span class="bd-chip">${esc(b.currency || '')}</span>
         <span class="bd-chip ${low ? 'warn' : 'ok'}">${low ? '低于阈值' : '正常'}</span>
       </div>
-      <div class="bd-amount">${fmtMoney(b.available, b.currency)}<span class="cur">${esc(b.currency || '')} 可用余额</span></div>
+      <div class="bd-amount">${fmtMoney(b.available, b.currency)}<span class="cur">${esc(b.currency || '')} ${isHh ? '运费余额' : '可用余额'}</span></div>
       <div class="bd-sub">采集时间 ${esc(fetchedAt || '—')}</div>
       <div class="bd-fields">${fields.map(([k, v]) =>
         `<div class="bd-field"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
@@ -847,7 +865,8 @@ function renderBalanceView() {
       • 采集方式：接管已登录的 Chrome（<code>./start-debug-chrome.sh</code>）后执行 <code>node fetch-balance.js</code>，全程只读。<br>
       • 燕文：<code>POST portal.yw56.com.cn/csc/bill/getBillBalance</code>（businessType=0 小包专线）+ <code>getPayableAmount</code><br>
       • 递四方：<code>GET order.4px.com/order/personal_center/queryAccountInfo</code> + <code>queryArrearCount</code>（主币种 <code>${esc(mainCur)}</code>）<br>
-      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code><br>
+      • 华翰：<code>GET www.hhddb.com/fee/fee/fee-list</code> 页面「账户总览」表格（运费余额／押金／信用额度）<br>
+      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_MIN_HUAHAN=${BAL_MIN_HUAHAN}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code><br>
       • 飞书推送开关 <code>BALANCE_ALERT_ENABLED</code>；每日 19:05 自动化会顺带刷新本页数据。<br>
       • 余额历史快照存于 <code>data/balance-history.json</code>，随每日采集累积，用于画上面的趋势线。
     </div>
