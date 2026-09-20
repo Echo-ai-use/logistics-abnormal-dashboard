@@ -221,6 +221,8 @@
   .bd-card.ck::before { background: linear-gradient(90deg, #fb923c, transparent 72%); }
   .bal-card.yt { border-left: 3px solid #f472b6; box-shadow: -1px 0 14px rgba(244, 114, 182, .18); }
   .bd-card.yt::before { background: linear-gradient(90deg, #f472b6, transparent 72%); }
+  .bal-card.sy { border-left: 3px solid #34d399; box-shadow: -1px 0 14px rgba(52, 211, 153, .18); }
+  .bd-card.sy::before { background: linear-gradient(90deg, #34d399, transparent 72%); }
 
   /* —— 云途拦截模块 —— */
   .ic-card { max-width: 680px; }
@@ -707,7 +709,7 @@ function renderHomeBalances() {
   box.innerHTML = list.map(b => {
     const avail = Number(b.available);
     const neg = isFinite(avail) && avail < 0;
-    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : 'px')));
+    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : (b.source === 'shunyou' ? 'sy' : 'px'))));
     const sub = [];
     if (b.source === 'yanwen') {
       sub.push('未出账单 ' + fmtMoney(b.unsettled, b.currency));
@@ -723,6 +725,12 @@ function renderHomeBalances() {
         .map(x => x.currency + ' ' + fmtMoney(x.available, x.currency));
       if (others.length) sub.push('其他币种 ' + others.join(' · '));
     } else if (b.source === 'yuntu') {
+      const others = (b.byCurrency || [])
+        .filter(x => x.currency !== b.currency && Number(x.available))
+        .map(x => x.currency + ' ' + fmtMoney(x.available, x.currency));
+      if (others.length) sub.push('其他币种 ' + others.join(' · '));
+    } else if (b.source === 'shunyou') {
+      if (b.credit != null) sub.push('可用额度 ' + fmtMoney(b.credit, b.currency));
       const others = (b.byCurrency || [])
         .filter(x => x.currency !== b.currency && Number(x.available))
         .map(x => x.currency + ' ' + fmtMoney(x.available, x.currency));
@@ -780,6 +788,7 @@ const BAL_MIN_4PX = 10000;     // 递四方主币种可用余额低于此值告�
 const BAL_MIN_HUAHAN = 0;      // 华翰运费余额低于此值告警（CNY）
 const BAL_MIN_CHUKOU1 = 0;     // 出口易主币种可用余额低于此值告警（默认 CNY）
 const BAL_MIN_YUNTU = 0;      // 云途可用余额低于此值告警（默认 CNY）
+const BAL_MIN_SHUNYOU = 0;    // 顺友账户余额低于此值告警（默认 CNY）
 
 /** 各渠道告警阈值（与后端 notify-balance.js 口径保持一致） */
 function balanceMin(b) {
@@ -787,6 +796,7 @@ function balanceMin(b) {
   if (b.source === 'hh') return BAL_MIN_HUAHAN;
   if (b.source === 'chukou1') return BAL_MIN_CHUKOU1;
   if (b.source === 'yuntu') return BAL_MIN_YUNTU;
+  if (b.source === 'shunyou') return BAL_MIN_SHUNYOU;
   return BAL_MIN_4PX;
 }
 
@@ -1049,7 +1059,7 @@ function renderTable() {
 let quickProvider = 'yuntu';
 let quickActionId = null;
 
-const PROVIDER_TINT = { yuntu: '#f472b6', '4px': '#22d3ee', yanwen: '#22e0a1', hh: '#a78bfa', chukou1: '#fb923c' };
+const PROVIDER_TINT = { yuntu: '#f472b6', '4px': '#22d3ee', yanwen: '#22e0a1', hh: '#a78bfa', chukou1: '#fb923c', shunyou: '#34d399' };
 
 /**
  * 物流商 → 快速操作 注册表（核心扩展点）。
@@ -1072,6 +1082,7 @@ const QUICK_PROVIDERS = [
   { id: 'yanwen', name: '燕文', icon: '📮', color: 'yw', actions: [], comingSoon: true },
   { id: 'hh', name: '华翰', icon: '🚚', color: 'hh', actions: [], comingSoon: true },
   { id: 'chukou1', name: '出口易', icon: '🌉', color: 'ck', actions: [], comingSoon: true },
+  { id: 'shunyou', name: '顺友', icon: '🚀', color: 'sy', actions: [], comingSoon: true },
 ];
 
 function renderQuickView() {
