@@ -1344,7 +1344,7 @@ function refreshUI() {
 
 async function loadData() {
   try {
-    const resp = await fetch('data.json', { cache: 'no-store' });
+    const resp = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error(resp.status);
     DATA = await resp.json();
   } catch (e) {
