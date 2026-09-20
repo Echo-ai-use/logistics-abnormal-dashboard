@@ -798,15 +798,20 @@ function renderHomeModules() {
 }
 
 /* ==================== 账户余额监控模块 ==================== */
-const BAL_MIN_YANWEN = 0;      // 燕文可用余额低于此值告警（CNY）
-const BAL_MIN_4PX = 10000;     // 递四方主币种可用余额低于此值告警（单位 = 主币种，默认 USD）
-const BAL_MIN_HUAHAN = 0;      // 华翰运费余额低于此值告警（CNY）
-const BAL_MIN_CHUKOU1 = 0;     // 出口易主币种可用余额低于此值告警（默认 CNY）
-const BAL_MIN_YUNTU = 0;      // 云途可用余额低于此值告警（默认 CNY）
-const BAL_MIN_SHUNYOU = 0;    // 顺友账户余额低于此值告警（默认 CNY）
-const BAL_MIN_GOODCANG = 0;  // 谷仓账户余额低于此值告警（默认 USD）
-const BAL_MIN_JISU = 0;      // 急速账户余额低于此值告警（默认 CNY）
-const BAL_MIN_LION = 0;      // 纬狮现在余额低于此值告警（默认 CNY）
+/* 预警规则（2026-09-20 定版，与后端 notify-balance.js / .env 三方一致）：
+   燕文=账单截止日前3天倒计时；4PX<2万USD(周四<10万)；华翰<-8万；云途≤-250万；
+   出口易<5万；顺友<5千；谷仓<3千USD；急速<5千；纬狮<5千 */
+const BAL_YANWEN_DEADLINE_DAYS = 3; // 燕文账单截止倒计时 N 天内预警（前端仅作负余额提示，完整截止逻辑在 notify-balance.js）
+const BAL_MIN_YANWEN = 0;           // 燕文前端阈值（后端按账单截止日预警，非余额阈值）
+const BAL_MIN_4PX = 20000;     // 递四方主币种可用余额低于此值告警（单位 = 主币种，默认 USD）
+const BAL_MIN_4PX_THU = 100000; // 递四方周四例行：低于 10 万 USD 告警
+const BAL_MIN_HUAHAN = -80000; // 华翰运费余额低于此值告警（CNY）
+const BAL_MIN_CHUKOU1 = 50000; // 出口易主币种可用余额低于此值告警（默认 CNY）
+const BAL_MIN_YUNTU = -2500000;// 云途可用余额低于此值告警（默认 CNY）
+const BAL_MIN_SHUNYOU = 5000;  // 顺友账户余额低于此值告警（默认 CNY）
+const BAL_MIN_GOODCANG = 3000; // 谷仓账户余额低于此值告警（默认 USD）
+const BAL_MIN_JISU = 5000;     // 急速账户余额低于此值告警（默认 CNY）
+const BAL_MIN_LION = 5000;     // 纬狮现在余额低于此值告警（默认 CNY）
 
 /** 各渠道告警阈值（与后端 notify-balance.js 口径保持一致） */
 function balanceMin(b) {
