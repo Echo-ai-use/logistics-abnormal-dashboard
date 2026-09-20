@@ -715,7 +715,7 @@ function renderHomeBalances() {
   box.innerHTML = list.map(b => {
     const avail = Number(b.available);
     const neg = isFinite(avail) && avail < 0;
-    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : (b.source === 'shunyou' ? 'sy' : (b.source === 'goodcang' ? 'gc' : (b.source === 'jisu' ? 'js' : (b.source === 'lion' ? 'lion' : 'px'))))))));
+    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : (b.source === 'shunyou' ? 'sy' : (b.source === 'goodcang' ? 'gc' : (b.source === 'jisu' ? 'js' : (b.source === 'lion' ? 'lion' : 'px')))))));
     const sub = [];
     if (b.source === 'yanwen') {
       sub.push('未出账单 ' + fmtMoney(b.unsettled, b.currency));
