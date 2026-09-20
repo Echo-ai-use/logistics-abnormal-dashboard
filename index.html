@@ -219,6 +219,39 @@
   .bd-card.yw::before { background: linear-gradient(90deg, var(--green), transparent 72%); }
   .bd-card.hh::before { background: linear-gradient(90deg, var(--purple), transparent 72%); }
   .bd-card.ck::before { background: linear-gradient(90deg, #fb923c, transparent 72%); }
+  .bal-card.yt { border-left: 3px solid #f472b6; box-shadow: -1px 0 14px rgba(244, 114, 182, .18); }
+  .bd-card.yt::before { background: linear-gradient(90deg, #f472b6, transparent 72%); }
+
+  /* —— 云途拦截模块 —— */
+  .ic-card { max-width: 680px; }
+  .ic-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+  .ic-head h2 { font-size: 18px; margin: 0 0 4px; }
+  .ic-sub { color: var(--text-2); font-size: 13px; }
+  .ic-env { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+  .ic-env.ok { color: var(--accent); border-color: rgba(34,211,238,.4); background: rgba(34,211,238,.08); }
+  .ic-env.warn { color: #f59e0b; border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.08); }
+  .ic-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .ic-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-2); }
+  .ic-form .ic-wide { grid-column: 1 / -1; }
+  .ic-form input, .ic-form select { background: rgba(10,22,38,.7); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .ic-form input:focus, .ic-form select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,211,238,.15); }
+  .ic-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn.danger { background: linear-gradient(135deg, #ff5f57, #ff8a65); border-color: transparent; color: #2a0a08; font-weight: 600; }
+  .btn.danger:hover { box-shadow: 0 0 18px rgba(255,95,87,.5); }
+  .ic-confirm { position: fixed; inset: 0; background: rgba(2,8,16,.66); display: flex; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(3px); }
+  .ic-confirm-box { background: var(--card); border: 1px solid rgba(255,95,87,.4); border-radius: 16px; padding: 22px 24px; max-width: 420px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+  .ic-confirm-title { font-size: 16px; font-weight: 700; color: #ff5f57; margin-bottom: 12px; }
+  .ic-confirm-detail { font-size: 14px; line-height: 1.7; color: var(--text); margin-bottom: 18px; }
+  .ic-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .ic-result { margin-top: 16px; padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.7; border: 1px solid var(--line); }
+  .ic-result.ok { border-color: rgba(34,224,161,.4); background: rgba(34,224,161,.08); color: var(--green); }
+  .ic-result.err { border-color: rgba(255,95,87,.4); background: rgba(255,95,87,.08); color: #ff8a82; }
+  .ic-log { margin-top: 22px; }
+  .ic-log-title { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+  .ic-log-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow: auto; }
+  .ic-log-item { font-size: 12px; padding: 6px 10px; border-radius: 8px; border-left: 3px solid var(--line); color: var(--text-2); background: rgba(10,22,38,.5); }
+  .ic-log-item.ok { border-left-color: var(--green); }
+  .ic-log-item.err { border-left-color: #ff5f57; }
   .bd-card.neg::before { background: linear-gradient(90deg, var(--red), transparent 72%); }
   .bd-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .bd-head .nm { font-size: 16px; font-weight: 700; }
@@ -374,6 +407,11 @@
       </div>
 
       <div class="nav-group">
+        <div class="nav-label">操作</div>
+        <div class="nav-item" data-view="quick"><span class="icon">⚡</span> 快速操作</div>
+      </div>
+
+      <div class="nav-group">
         <div class="nav-label">数据</div>
         <div class="nav-item" id="nav-export"><span class="icon">📥</span> 导出 CSV</div>
       </div>
@@ -445,6 +483,11 @@
     <!-- 账户余额监控 -->
     <section id="view-balance" class="hidden">
       <div id="balance-body"><!-- 由 renderBalanceView() 填充 --></div>
+    </section>
+
+    <!-- 快速操作（跨物流商：拦截 / 重派 / 自提等） -->
+    <section id="view-quick" class="hidden">
+      <div id="quick-body"><!-- 由 renderQuickView() 填充 --></div>
     </section>
 
     <!-- 模块页 -->
@@ -520,6 +563,7 @@ const SAMPLE = {
     { source:'4px', name:'递四方', account:'C100123', customerName:'Echo跨境', currency:'USD', available:'97398.26', accountBalance:'97398.26', frozen:'0', credit:'0', arrearCount:0, byCurrency:[{currency:'USD', available:'97398.26', account:'97398.26', frozen:'0', credit:'0'},{currency:'CNY', available:'17.04', account:'17.04', frozen:'0', credit:'0'}], endpoint:'/order/personal_center/queryAccountInfo' },
     { source:'hh', name:'华翰', account:'114665', currency:'CNY', available:'45580.86', deposit:'0', creditTotal:'0', creditRemaining:'0', endpoint:'/fee/fee/fee-list' },
     { source:'chukou1', name:'出口易', account:'CK12345', customerName:'Echo Ltd', currency:'CNY', available:'218640.50', accountBalance:'218640.50', frozen:'0', credit:null, arrearCount:null, byCurrency:[{currency:'CNY', available:'218640.50', account:'218640.50', frozen:'0', credit:null},{currency:'USD', available:'5200.00', account:'5200.00', frozen:'0', credit:null}], endpoint:'/v1/Bills/Balances (OAuth2)' },
+    { source:'yuntu', name:'云途', account:'YT880012', currency:'CNY', available:'132500.00', byCurrency:[{currency:'CNY', available:'132500.00', account:'132500.00', frozen:'0', credit:null}], endpoint:'（示例）云途后台余额页' },
   ]
 };
 SAMPLE.all = [...SAMPLE.matched, ...SAMPLE.unmatched];
@@ -663,7 +707,7 @@ function renderHomeBalances() {
   box.innerHTML = list.map(b => {
     const avail = Number(b.available);
     const neg = isFinite(avail) && avail < 0;
-    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : 'px'));
+    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : 'px')));
     const sub = [];
     if (b.source === 'yanwen') {
       sub.push('未出账单 ' + fmtMoney(b.unsettled, b.currency));
@@ -674,6 +718,11 @@ function renderHomeBalances() {
     } else if (b.source === 'chukou1') {
       sub.push('总余额 ' + fmtMoney(b.accountBalance, b.currency));
       sub.push('冻结 ' + fmtMoney(b.frozen, b.currency));
+      const others = (b.byCurrency || [])
+        .filter(x => x.currency !== b.currency && Number(x.available))
+        .map(x => x.currency + ' ' + fmtMoney(x.available, x.currency));
+      if (others.length) sub.push('其他币种 ' + others.join(' · '));
+    } else if (b.source === 'yuntu') {
       const others = (b.byCurrency || [])
         .filter(x => x.currency !== b.currency && Number(x.available))
         .map(x => x.currency + ' ' + fmtMoney(x.available, x.currency));
@@ -730,12 +779,14 @@ const BAL_MIN_YANWEN = 0;      // 燕文可用余额低于此值告警（CNY）
 const BAL_MIN_4PX = 10000;     // 递四方主币种可用余额低于此值告警（单位 = 主币种，默认 USD）
 const BAL_MIN_HUAHAN = 0;      // 华翰运费余额低于此值告警（CNY）
 const BAL_MIN_CHUKOU1 = 0;     // 出口易主币种可用余额低于此值告警（默认 CNY）
+const BAL_MIN_YUNTU = 0;      // 云途可用余额低于此值告警（默认 CNY）
 
 /** 各渠道告警阈值（与后端 notify-balance.js 口径保持一致） */
 function balanceMin(b) {
   if (b.source === 'yanwen') return BAL_MIN_YANWEN;
   if (b.source === 'hh') return BAL_MIN_HUAHAN;
   if (b.source === 'chukou1') return BAL_MIN_CHUKOU1;
+  if (b.source === 'yuntu') return BAL_MIN_YUNTU;
   return BAL_MIN_4PX;
 }
 
@@ -797,7 +848,7 @@ function renderBalanceView() {
   if (!list.length) {
     box.innerHTML = `<div class="card"><div class="empty"><div class="big">💰</div>暂无余额数据
       <div class="hint">燕文／递四方／华翰：先运行 <span class="mono">./start-debug-chrome.sh</span> 启动可接管的 Chrome（登录一次），再执行 <span class="mono">node fetch-balance.js</span>；
-      出口易走官方 OAuth2 API，填好 <span class="mono">.env</span> 的 CHUKOU1_* 即可自动采集</div></div></div>`;
+      出口易走官方 OAuth2 API，填好 <span class="mono">.env</span> 的 CHUKOU1_* 即可自动采集；云途余额需在调试 Chrome 登录后台、填好 <span class="mono">YUNTU_BALANCE_URL</span> 后抓取</div></div></div>`;
     return;
   }
 
@@ -808,7 +859,7 @@ function renderBalanceView() {
     ? `<div class="bd-alert"><span class="ico">⚠️</span><div><b>${alerts.length} 项余额预警</b><br>${
         alerts.map(a => esc(a.text)).join('<br>')}</div></div>`
     : `<div class="bd-alert ok"><span class="ico">✅</span><div>各渠道余额均高于告警阈值
-        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}、华翰 ≥ ${fmtMoney(BAL_MIN_HUAHAN, 'CNY')}、出口易 ≥ ${fmtMoney(BAL_MIN_CHUKOU1, 'CNY')}）</div></div>`;
+        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}、华翰 ≥ ${fmtMoney(BAL_MIN_HUAHAN, 'CNY')}、出口易 ≥ ${fmtMoney(BAL_MIN_CHUKOU1, 'CNY')}、云途 ≥ ${fmtMoney(BAL_MIN_YUNTU, 'CNY')}）</div></div>`;
 
   /* ② 每渠道明细卡 */
   const cards = list.map(b => {
@@ -816,6 +867,7 @@ function renderBalanceView() {
     const isYw = b.source === 'yanwen';
     const isHh = b.source === 'hh';
     const isCk = b.source === 'chukou1';
+    const isYt = b.source === 'yuntu';
     const min = balanceMin(b);
     const low = isFinite(avail) && avail < min;
 
@@ -832,6 +884,9 @@ function renderBalanceView() {
     } else if (isCk) {
       fields.push(['总余额', fmtMoney(b.accountBalance, b.currency)]);
       fields.push(['冻结金额', fmtMoney(b.frozen, b.currency)]);
+      fields.push(['币种数', (b.byCurrency || []).length + ' 个']);
+    } else if (isYt) {
+      fields.push(['可用余额', fmtMoney(b.available, b.currency)]);
       fields.push(['币种数', (b.byCurrency || []).length + ' 个']);
     } else {
       fields.push(['账户余额', fmtMoney(b.accountBalance, b.currency)]);
@@ -864,7 +919,7 @@ function renderBalanceView() {
         </div>`
       : `<div class="bd-spark"><div class="lbl"><span>趋势</span><span>数据积累中（每天采集后自动生成折线）</span></div></div>`;
 
-    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : (isCk ? 'ck' : 'px'))}${low ? ' neg' : ' ok'}">
+    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : (isCk ? 'ck' : (isYt ? 'yt' : 'px')))}${low ? ' neg' : ' ok'}">
       <div class="bd-head">
         <span class="nm">${esc(b.name)}</span>
         <span class="acct">${esc(b.account || '')}</span>
@@ -890,7 +945,8 @@ function renderBalanceView() {
       • 递四方：<code>GET order.4px.com/order/personal_center/queryAccountInfo</code> + <code>queryArrearCount</code>（主币种 <code>${esc(mainCur)}</code>）<br>
       • 华翰：<code>GET www.hhddb.com/fee/fee/fee-list</code> 页面「账户总览」表格（运费余额／押金／信用额度）<br>
       • 出口易：<code>GET openapi.chukou1.cn:82/v1/Bills/Balances</code>（官方 OAuth2：<code>refresh_token</code> 换 <code>access_token</code>，无需浏览器）<br>
-      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_MIN_HUAHAN=${BAL_MIN_HUAHAN}</code>、<code>BAL_MIN_CHUKOU1=${BAL_MIN_CHUKOU1}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code>、<code>CHUKOU1_CURRENCY=CNY</code><br>
+      • 云途：余额走「抓后台网页」（OMS API 无余额接口）；在调试 Chrome 登录云途后台后，<code>node fetch-balance.js</code> 按 <code>YUNTU_BALANCE_URL</code> 读 DOM。订单拦截独立功能见左侧「云途拦截」。<br>
+      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_MIN_HUAHAN=${BAL_MIN_HUAHAN}</code>、<code>BAL_MIN_CHUKOU1=${BAL_MIN_CHUKOU1}</code>、<code>BAL_MIN_YUNTU=${BAL_MIN_YUNTU}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code>、<code>CHUKOU1_CURRENCY=CNY</code><br>
       • 飞书推送开关 <code>BALANCE_ALERT_ENABLED</code>；每日 19:05 自动化会顺带刷新本页数据。<br>
       • 余额历史快照存于 <code>data/balance-history.json</code>，随每日采集累积，用于画上面的趋势线。
     </div>
@@ -989,13 +1045,222 @@ function renderTable() {
   el('module-count').textContent = `共 ${rows.length} 条`;
 }
 
+/* ==================== 快速操作模块（跨物流商，可扩展） ==================== */
+let quickProvider = 'yuntu';
+let quickActionId = null;
+
+const PROVIDER_TINT = { yuntu: '#f472b6', '4px': '#22d3ee', yanwen: '#22e0a1', hh: '#a78bfa', chukou1: '#fb923c' };
+
+/**
+ * 物流商 → 快速操作 注册表（核心扩展点）。
+ * 后续接入新物流商：在此追加一项，并为每个 action 提供 render(panel, action) 实现；
+ * 若操作涉及密钥（写类接口），action 自带 endpoint/health 指向本地服务（密钥不进静态页）。
+ */
+const QUICK_PROVIDERS = [
+  {
+    id: 'yuntu', name: '云途 YunExpress', icon: '🛰️', color: 'yt',
+    actions: [
+      {
+        id: 'intercept', name: '订单拦截', icon: '🛑',
+        desc: '提交云途 OMS 运单拦截，仅支持已预报 / 已入仓运单',
+        endpoint: '/api/yuntu/intercept', health: '/api/yuntu/health',
+        render: renderYuntuIntercept,
+      },
+    ],
+  },
+  { id: '4px', name: '递四方 4PX', icon: '📦', color: 'px', actions: [], comingSoon: true },
+  { id: 'yanwen', name: '燕文', icon: '📮', color: 'yw', actions: [], comingSoon: true },
+  { id: 'hh', name: '华翰', icon: '🚚', color: 'hh', actions: [], comingSoon: true },
+  { id: 'chukou1', name: '出口易', icon: '🌉', color: 'ck', actions: [], comingSoon: true },
+];
+
+function renderQuickView() {
+  const box = el('quick-body');
+  if (!box) return;
+  const p = QUICK_PROVIDERS.find(x => x.id === quickProvider) || QUICK_PROVIDERS[0];
+
+  const tabs = QUICK_PROVIDERS.map(x => `
+    <div class="status-tab ${x.id === quickProvider ? 'active' : ''}" data-provider="${x.id}">
+      <span class="dot" style="background:${PROVIDER_TINT[x.id] || 'var(--accent)'}"></span>
+      ${x.icon} ${esc(x.name)}
+    </div>`).join('');
+
+  let actionsHtml;
+  if (!p.actions || !p.actions.length) {
+    actionsHtml = `<div class="empty"><div class="big">🚧</div>${esc(p.name)} 的快速操作即将上线
+      <div class="hint">后续会在本模块接入该物流商的拦截 / 重派 / 自提确认等写操作。</div></div>`;
+  } else {
+    actionsHtml = `<div class="quick-grid">` + p.actions.map(a => `
+      <div class="quick-card" data-action="${a.id}">
+        <div class="icon-wrap" style="background:rgba(56,189,248,.1)">${a.icon}</div>
+        <div>
+          <div class="name">${esc(a.name)}</div>
+          <div class="desc">${esc(a.desc)}</div>
+          ${a.health ? `<div class="tag" data-health="${a.id}">检测中…</div>` : ''}
+        </div>
+      </div>`).join('') + `</div>`;
+  }
+
+  box.innerHTML = `
+    <div class="card">
+      <div class="section-title">⚡ 选择物流商</div>
+      <div class="status-tabs" id="quick-providers">${tabs}</div>
+    </div>
+    <div class="card">
+      <div class="section-title">🔧 ${esc(p.name)} · 可用操作</div>
+      <div id="quick-actions">${actionsHtml}</div>
+      <div id="quick-panel"></div>
+    </div>`;
+
+  el('quick-providers').querySelectorAll('.status-tab').forEach(t => {
+    t.onclick = () => { quickProvider = t.dataset.provider; quickActionId = null; renderQuickView(); };
+  });
+
+  if (p.actions && p.actions.length) {
+    const actionsBox = el('quick-actions');
+    actionsBox.querySelectorAll('.quick-card').forEach(c => {
+      c.onclick = () => {
+        const a = p.actions.find(x => x.id === c.dataset.action);
+        quickActionId = a.id;
+        actionsBox.querySelectorAll('.quick-card').forEach(x => x.style.borderColor = '');
+        c.style.borderColor = 'var(--accent)';
+        a.render(el('quick-panel'), a);
+      };
+    });
+    p.actions.forEach(a => {
+      if (!a.health) return;
+      const tag = actionsBox.querySelector(`[data-health="${a.id}"]`);
+      if (!tag) return;
+      fetch(a.health).then(r => r.json()).then(j => {
+        tag.textContent = (j.configured ? '✅ 凭证已配置' : '⚠️ 凭证未配置') + (j.apiBase ? ' · ' + j.apiBase : '');
+        tag.style.background = j.configured ? 'rgba(34,224,161,.12)' : 'rgba(245,158,11,.12)';
+        tag.style.color = j.configured ? '#5cf0bf' : '#f59e0b';
+        tag.style.borderColor = j.configured ? 'rgba(34,224,161,.3)' : 'rgba(245,158,11,.34)';
+      }).catch(() => { tag.textContent = '⚠️ 本地服务未响应'; tag.style.color = '#f59e0b'; });
+    });
+  }
+}
+
+/** 云途订单拦截（写操作）—— 由本地服务 yuntu-server.js 代发，密钥不进静态页 */
+function renderYuntuIntercept(panel, action) {
+  const local = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+  if (!local) {
+    panel.innerHTML = `<div class="card"><div class="empty"><div class="big">🛑</div>云途订单拦截需在本地服务下使用
+      <div class="hint">密钥（ApiSecret）不能进入静态页，故拦截请求由本机服务代发。<br>
+      请在本机运行：<span class="mono">node yuntu-server.js</span>，<br>
+      然后用 <span class="mono">http://localhost:${window.__PORT || '3000'}/</span> 打开本看板，即可在「快速操作 → 云途 → 订单拦截」中使用。</div></div></div>`;
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="ic-card" style="margin-top:16px">
+      <div class="ic-head">
+        <div>
+          <h2>🛑 云途订单拦截</h2>
+          <div class="ic-sub">提交云途 OMS 运单拦截（仅支持已预报、已入仓运单）</div>
+        </div>
+        <span class="ic-env" id="ic-env">检测中…</span>
+      </div>
+
+      <div class="ic-form">
+        <label>单号类型
+          <select id="ic-type">
+            <option value="1">1 - 云途单号</option>
+            <option value="2" selected>2 - 客户订单号</option>
+            <option value="3">3 - 跟踪号</option>
+          </select>
+        </label>
+        <label>订单单号
+          <input id="ic-order" type="text" placeholder="如 YT1908411202000003 或 客户订单号" autocomplete="off">
+        </label>
+        <label class="ic-wide">拦截原因（必填）
+          <input id="ic-remark" type="text" placeholder="如：客户要求拦截 / 地址错误" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="ic-actions">
+        <button class="btn" id="ic-submit">提交拦截</button>
+        <button class="btn ghost" id="ic-clear">清空</button>
+      </div>
+
+      <!-- 二次确认弹框 -->
+      <div class="ic-confirm hidden" id="ic-confirm">
+        <div class="ic-confirm-box">
+          <div class="ic-confirm-title">⚠️ 确认提交云途拦截？</div>
+          <div class="ic-confirm-detail" id="ic-confirm-detail"></div>
+          <div class="ic-confirm-actions">
+            <button class="btn danger" id="ic-confirm-yes">确认拦截</button>
+            <button class="btn ghost" id="ic-confirm-no">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ic-result hidden" id="ic-result"></div>
+      <div class="ic-log">
+        <div class="ic-log-title">本次会话拦截记录</div>
+        <div id="ic-log-list" class="ic-log-list"></div>
+      </div>
+    </div>`;
+
+  const q = sel => panel.querySelector(sel);
+  const envEl = q('#ic-env');
+  fetch(action.health).then(r => r.json()).then(j => {
+    envEl.textContent = (j.configured ? '✅ 凭证已配置' : '⚠️ 凭证未配置') + ' · ' + (j.apiBase || '');
+    envEl.className = 'ic-env ' + (j.configured ? 'ok' : 'warn');
+  }).catch(() => { envEl.textContent = '⚠️ 本地服务未响应'; envEl.className = 'ic-env warn'; });
+
+  const orderEl = q('#ic-order'), typeEl = q('#ic-type'), remarkEl = q('#ic-remark');
+  const confirmEl = q('#ic-confirm'), detailEl = q('#ic-confirm-detail');
+  const resultEl = q('#ic-result'), logList = q('#ic-log-list');
+
+  const pending = () => ({ orderType: typeEl.value, orderNumber: orderEl.value.trim(), remark: remarkEl.value.trim() });
+
+  q('#ic-submit').onclick = () => {
+    const pdata = pending();
+    if (!pdata.orderNumber) { resultEl.className = 'ic-result'; resultEl.textContent = '⚠️ 请填写订单单号'; resultEl.classList.remove('hidden'); return; }
+    if (!pdata.remark) { resultEl.className = 'ic-result'; resultEl.textContent = '⚠️ 拦截原因不能为空'; resultEl.classList.remove('hidden'); return; }
+    const typeName = { '1': '云途单号', '2': '客户订单号', '3': '跟踪号' }[pdata.orderType];
+    detailEl.innerHTML = `单号类型：<b>${typeName}</b><br>订单单号：<b>${esc(pdata.orderNumber)}</b><br>拦截原因：<b>${esc(pdata.remark)}</b><br><br>该操作会向云途提交拦截请求，且<b>不可自动撤销</b>。`;
+    confirmEl.classList.remove('hidden');
+  };
+  q('#ic-clear').onclick = () => { orderEl.value = ''; remarkEl.value = ''; resultEl.classList.add('hidden'); };
+  q('#ic-confirm-no').onclick = () => confirmEl.classList.add('hidden');
+  q('#ic-confirm-yes').onclick = async () => {
+    const pdata = pending();
+    confirmEl.classList.add('hidden');
+    resultEl.className = 'ic-result'; resultEl.textContent = '⏳ 提交中…'; resultEl.classList.remove('hidden');
+    try {
+      const resp = await fetch(action.endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pdata),
+      });
+      const j = await resp.json();
+      const ok = j.ok;
+      resultEl.className = 'ic-result ' + (ok ? 'ok' : 'err');
+      resultEl.innerHTML = `<b>${ok ? '✅ 拦截成功' : '❌ 拦截失败'}</b><br>
+        Code：${esc(j.code || '')} ｜ Message：${esc(j.message || '')}<br>
+        ${j.result ? '结果码：' + esc(j.result) + '<br>' : ''}
+        ${j.remark ? '处理信息：' + esc(j.remark) + '<br>' : ''}`;
+      const li = document.createElement('div');
+      li.className = 'ic-log-item ' + (ok ? 'ok' : 'err');
+      li.innerHTML = `${new Date().toLocaleString()} ｜ ${ok ? '成功' : '失败'} ｜ ${esc(pdata.orderNumber)} ｜ ${esc(j.message || j.code || '')}`;
+      logList.prepend(li);
+    } catch (e) {
+      resultEl.className = 'ic-result err'; resultEl.textContent = '❌ 请求失败：' + e.message;
+    }
+  };
+}
+
+const STANDALONE_VIEWS = ['home', 'balance', 'quick'];
+
 function switchView(view) {
   currentView = view;
   el('view-home').classList.toggle('hidden', view !== 'home');
   el('view-module').classList.toggle('hidden', view !== 'module');
   el('view-balance').classList.toggle('hidden', view !== 'balance');
+  el('view-quick').classList.toggle('hidden', view !== 'quick');
   document.querySelectorAll('.nav-item[data-view]').forEach(n => {
-    n.classList.toggle('active', n.dataset.view === view && (view === 'home' || view === 'balance' || n.dataset.mod === currentModule));
+    n.classList.toggle('active', n.dataset.view === view && (STANDALONE_VIEWS.includes(view) || n.dataset.mod === currentModule));
   });
   if (view === 'home') {
     el('page-title').textContent = '物流异常订单看板';
@@ -1007,6 +1272,10 @@ function switchView(view) {
     el('page-title').textContent = '账户余额监控';
     el('page-sub').textContent = '燕文 / 递四方 渠道账户余额 · 阈值告警 · 历史趋势';
     renderBalanceView();
+  } else if (view === 'quick') {
+    el('page-title').textContent = '快速操作';
+    el('page-sub').textContent = '跨物流商的拦截 / 重派 / 自提等快捷操作（云途拦截已接入，更多物流商陆续上线）';
+    renderQuickView();
   }
 }
 
@@ -1031,6 +1300,8 @@ function refreshUI() {
     renderHomeModules();
   } else if (currentView === 'balance') {
     renderBalanceView();
+  } else if (currentView === 'quick') {
+    renderQuickView();
   } else {
     renderTable();
   }
@@ -1101,6 +1372,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(n => {
   n.onclick = () => {
     if (n.dataset.view === 'home') switchView('home');
     else if (n.dataset.view === 'balance') switchView('balance');
+    else if (n.dataset.view === 'quick') switchView('quick');
     else switchModule(n.dataset.mod);
   };
 });
