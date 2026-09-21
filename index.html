@@ -229,6 +229,8 @@
   .bd-card.js::before { background: linear-gradient(90deg, #60a5fa, transparent 72%); }
   .bal-card.lion { border-left: 3px solid #a3e635; box-shadow: -1px 0 14px rgba(163, 230, 53, .18); }
   .bd-card.lion::before { background: linear-gradient(90deg, #a3e635, transparent 72%); }
+  .bal-card.ec { border-left: 3px solid #e879f9; box-shadow: -1px 0 14px rgba(232, 121, 249, .18); }
+  .bd-card.ec::before { background: linear-gradient(90deg, #e879f9, transparent 72%); }
 
   /* —— 云途拦截模块 —— */
   .ic-card { max-width: 680px; }
@@ -715,7 +717,7 @@ function renderHomeBalances() {
   box.innerHTML = list.map(b => {
     const avail = Number(b.available);
     const neg = isFinite(avail) && avail < 0;
-    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : (b.source === 'shunyou' ? 'sy' : (b.source === 'goodcang' ? 'gc' : (b.source === 'jisu' ? 'js' : (b.source === 'lion' ? 'lion' : 'px')))))));
+    const cls = b.source === 'yanwen' ? 'yw' : (b.source === 'hh' ? 'hh' : (b.source === 'chukou1' ? 'ck' : (b.source === 'yuntu' ? 'yt' : (b.source === 'shunyou' ? 'sy' : (b.source === 'goodcang' ? 'gc' : (b.source === 'jisu' ? 'js' : (b.source === 'lion' ? 'lion' : (b.source === 'eccang' ? 'ec' : 'px'))))))));
     const sub = [];
     if (b.source === 'yanwen') {
       sub.push('未出账单 ' + fmtMoney(b.unsettled, b.currency));
@@ -750,6 +752,9 @@ function renderHomeBalances() {
       if (b.shipAmount != null) sub.push('可发货金额 ' + fmtMoney(b.shipAmount, b.currency));
     } else if (b.source === 'lion') {
       if (b.credit != null && Number(b.credit)) sub.push('授信 ' + fmtMoney(b.credit, b.currency));
+    } else if (b.source === 'eccang') {
+      if (b.credit != null && Number(b.credit)) sub.push('信用额度 ' + fmtMoney(b.credit, b.currency));
+      if (b.totalBalance != null && Number(b.totalBalance)) sub.push('总余额 ' + fmtMoney(b.totalBalance, b.currency));
     } else {
       const others = (b.byCurrency || [])
         .filter(x => x.currency !== b.currency && Number(x.available))
@@ -812,6 +817,7 @@ const BAL_MIN_SHUNYOU = 5000;  // 顺友账户余额低于此值告警（默认 
 const BAL_MIN_GOODCANG = 3000; // 谷仓账户余额低于此值告警（默认 USD）
 const BAL_MIN_JISU = 5000;     // 急速账户余额低于此值告警（默认 CNY）
 const BAL_MIN_LION = 5000;     // 纬狮现在余额低于此值告警（默认 CNY）
+const BAL_MIN_ECCANG = 5000;   // 易仓账户余额低于此值告警（默认 CNY）
 
 /** 各渠道告警阈值（与后端 notify-balance.js 口径保持一致） */
 function balanceMin(b) {
@@ -823,6 +829,7 @@ function balanceMin(b) {
   if (b.source === 'goodcang') return BAL_MIN_GOODCANG;
   if (b.source === 'jisu') return BAL_MIN_JISU;
   if (b.source === 'lion') return BAL_MIN_LION;
+  if (b.source === 'eccang') return BAL_MIN_ECCANG;
   return BAL_MIN_4PX;
 }
 
@@ -895,7 +902,7 @@ function renderBalanceView() {
     ? `<div class="bd-alert"><span class="ico">⚠️</span><div><b>${alerts.length} 项余额预警</b><br>${
         alerts.map(a => esc(a.text)).join('<br>')}</div></div>`
     : `<div class="bd-alert ok"><span class="ico">✅</span><div>各渠道余额均高于告警阈值
-        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}、华翰 ≥ ${fmtMoney(BAL_MIN_HUAHAN, 'CNY')}、出口易 ≥ ${fmtMoney(BAL_MIN_CHUKOU1, 'CNY')}、云途 ≥ ${fmtMoney(BAL_MIN_YUNTU, 'CNY')}）</div></div>`;
+        （燕文 ≥ ${fmtMoney(BAL_MIN_YANWEN, 'CNY')}、递四方 ≥ ${fmtMoney(BAL_MIN_4PX, mainCur)}、华翰 ≥ ${fmtMoney(BAL_MIN_HUAHAN, 'CNY')}、出口易 ≥ ${fmtMoney(BAL_MIN_CHUKOU1, 'CNY')}、云途 ≥ ${fmtMoney(BAL_MIN_YUNTU, 'CNY')}、易仓 ≥ ${fmtMoney(BAL_MIN_ECCANG, 'CNY')}）</div></div>`;
 
   /* ② 每渠道明细卡 */
   const cards = list.map(b => {
@@ -924,6 +931,10 @@ function renderBalanceView() {
     } else if (isYt) {
       fields.push(['可用余额', fmtMoney(b.available, b.currency)]);
       fields.push(['币种数', (b.byCurrency || []).length + ' 个']);
+    } else if (b.source === 'eccang') {
+      fields.push(['账户余额', fmtMoney(b.accountBalance, b.currency)]);
+      fields.push(['信用额度', fmtMoney(b.credit, b.currency)]);
+      fields.push(['总余额', fmtMoney(b.totalBalance, b.currency)]);
     } else {
       fields.push(['账户余额', fmtMoney(b.accountBalance, b.currency)]);
       fields.push(['冻结金额', fmtMoney(b.frozen, b.currency)]);
@@ -955,7 +966,7 @@ function renderBalanceView() {
         </div>`
       : `<div class="bd-spark"><div class="lbl"><span>趋势</span><span>数据积累中（每天采集后自动生成折线）</span></div></div>`;
 
-    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : (isCk ? 'ck' : (isYt ? 'yt' : 'px')))}${low ? ' neg' : ' ok'}">
+    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : (isCk ? 'ck' : (isYt ? 'yt' : (b.source === 'eccang' ? 'ec' : 'px'))))}${low ? ' neg' : ' ok'}">
       <div class="bd-head">
         <span class="nm">${esc(b.name)}</span>
         <span class="acct">${esc(b.account || '')}</span>
@@ -982,7 +993,8 @@ function renderBalanceView() {
       • 华翰：<code>GET www.hhddb.com/fee/fee/fee-list</code> 页面「账户总览」表格（运费余额／押金／信用额度）<br>
       • 出口易：<code>GET openapi.chukou1.cn:82/v1/Bills/Balances</code>（官方 OAuth2：<code>refresh_token</code> 换 <code>access_token</code>，无需浏览器）<br>
       • 云途：余额走「抓后台网页」（OMS API 无余额接口）；在调试 Chrome 登录云途后台后，<code>node fetch-balance.js</code> 按 <code>YUNTU_BALANCE_URL</code> 读 DOM。订单拦截独立功能见左侧「云途拦截」。<br>
-      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_MIN_HUAHAN=${BAL_MIN_HUAHAN}</code>、<code>BAL_MIN_CHUKOU1=${BAL_MIN_CHUKOU1}</code>、<code>BAL_MIN_YUNTU=${BAL_MIN_YUNTU}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code>、<code>CHUKOU1_CURRENCY=CNY</code><br>
+      • 易仓（北美之路）：TMS 开放接口 v1.0 无余额查询方法，余额走「抓后台网页」；在调试 Chrome 登录易仓后台后，<code>node fetch-balance.js</code> 按 <code>ECCANG_LOGIN_URL</code> 读 DOM（账户余额／信用额度／总余额）。<br>
+      • 告警阈值在 <code>.env</code> 调整：<code>BAL_YANWEN_MIN=${BAL_MIN_YANWEN}</code>、<code>BAL_4PX_MIN=${BAL_MIN_4PX}</code>、<code>BAL_MIN_HUAHAN=${BAL_MIN_HUAHAN}</code>、<code>BAL_MIN_CHUKOU1=${BAL_MIN_CHUKOU1}</code>、<code>BAL_MIN_YUNTU=${BAL_MIN_YUNTU}</code>、<code>BAL_MIN_ECCANG=${BAL_MIN_ECCANG}</code>、<code>BAL_4PX_CURRENCY=${esc(mainCur)}</code>、<code>CHUKOU1_CURRENCY=CNY</code><br>
       • 飞书推送开关 <code>BALANCE_ALERT_ENABLED</code>；每日 19:05 自动化会顺带刷新本页数据。<br>
       • 余额历史快照存于 <code>data/balance-history.json</code>，随每日采集累积，用于画上面的趋势线。
     </div>
@@ -1085,7 +1097,7 @@ function renderTable() {
 let quickProvider = 'yuntu';
 let quickActionId = null;
 
-const PROVIDER_TINT = { yuntu: '#f472b6', '4px': '#22d3ee', yanwen: '#22e0a1', hh: '#a78bfa', chukou1: '#fb923c', shunyou: '#34d399', goodcang: '#facc15', jisu: '#60a5fa', lion: '#a3e635' };
+const PROVIDER_TINT = { yuntu: '#f472b6', '4px': '#22d3ee', yanwen: '#22e0a1', hh: '#a78bfa', chukou1: '#fb923c', shunyou: '#34d399', goodcang: '#facc15', jisu: '#60a5fa', lion: '#a3e635', eccang: '#e879f9' };
 
 /**
  * 物流商 → 快速操作 注册表（核心扩展点）。
@@ -1112,6 +1124,7 @@ const QUICK_PROVIDERS = [
   { id: 'goodcang', name: '谷仓', icon: '🏬', color: 'gc', actions: [], comingSoon: true },
   { id: 'jisu', name: '急速', icon: '⚡', color: 'js', actions: [], comingSoon: true },
   { id: 'lion', name: '纬狮', icon: '🦁', color: 'lion', actions: [], comingSoon: true },
+  { id: 'eccang', name: '易仓', icon: '🏦', color: 'ec', actions: [], comingSoon: true },
 ];
 
 function renderQuickView() {
