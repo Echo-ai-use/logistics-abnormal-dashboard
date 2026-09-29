@@ -193,6 +193,20 @@
   .bal-updated { font-size: 11px; font-weight: 400; color: var(--text-2); margin-left: auto; font-family: var(--mono); }
   .bal-more { font-size: 12px; font-weight: 500; color: var(--accent); cursor: pointer; margin-left: 12px; white-space: nowrap; }
   .bal-more:hover { text-shadow: 0 0 10px rgba(34, 211, 248, .6); }
+  /* 余额数据过时报警 */
+  .bal-updated.stale { color: #ff5f57; }
+  .bal-stale { display: none; margin: 0 0 12px; padding: 10px 14px; border-radius: 10px;
+    background: rgba(255,95,87,.12); border: 1px solid rgba(255,95,87,.45); color: #ff8e88;
+    font-size: 12.5px; line-height: 1.55; }
+  .bal-stale.show { display: block; }
+  .bal-card { position: relative; }
+  .bal-card.stale { border-style: dashed !important; opacity: .82; }
+  .bal-card.stale::after { content: '⚠️ 已过时'; position: absolute; top: 8px; right: 10px;
+    font-size: 10px; color: #ff5f57; border: 1px solid rgba(255,95,87,.5); border-radius: 6px; padding: 1px 6px; }
+  .bd-stale { margin: 0 0 14px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(255,95,87,.12); border: 1px solid rgba(255,95,87,.45); color: #ff8e88; font-size: 13px; line-height: 1.55; }
+  .bd-card.stale { border-color: rgba(255,95,87,.5) !important; }
+  .bd-card.stale .bd-sub { color: #ff8e88; }
 
   /* ===== 账户余额监控模块 ===== */
   .bd-alert {
@@ -466,6 +480,7 @@
 
       <div class="card">
         <div class="section-title">💰 渠道账户余额 <span class="bal-updated" id="bal-updated"></span><span class="bal-more" id="bal-more">查看详情 →</span></div>
+        <div class="bal-stale" id="bal-stale"></div>
         <div class="bal-grid" id="home-balances">
           <!-- 由 JS 填充 -->
         </div>
@@ -698,6 +713,25 @@ function fmtMoney(v, cur) {
   return (n < 0 ? '-' : '') + sym + abs;
 }
 
+/* 余额数据新鲜度：基于采集时间判断是否过时。
+   注意：整次抓取被跳过时 balance.json 不会被重写，渠道也不会被打 carriedOver 标，
+   所以必须靠「采集时间年龄」来识别过期，而不能只信 carriedOver 字段。 */
+const BAL_STALE_HOURS = 36; // 超过此小时数视为「已过时」（覆盖一次夜间采集失败 / 调试 Chrome 未运行）
+function balanceAgeInfo() {
+  const raw = String(((DATA && DATA.balancesFetchedAt) || (DATA && DATA.generatedAt)) || '');
+  const iso = raw.replace(/[^\dTZ:.\+\-]/g, '').slice(0, 25); // 去掉「（示例）」等杂字符，保留 ISO
+  const t = Date.parse(iso);
+  if (!isFinite(t)) return { ageHours: null, stale: false, ageText: '', tsText: '' };
+  const ageHours = (Date.now() - t) / 36e5;
+  const d = new Date(t);
+  const tsText = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  let ageText = '';
+  if (ageHours < 1) ageText = '刚刚';
+  else if (ageHours < 24) ageText = Math.round(ageHours) + ' 小时前';
+  else ageText = Math.round(ageHours / 24) + ' 天前';
+  return { ageHours, stale: ageHours > BAL_STALE_HOURS, ageText, tsText };
+}
+
 function renderHomeBalances() {
   const box = el('home-balances');
   if (!box) return;
@@ -712,7 +746,20 @@ function renderHomeBalances() {
     return;
   }
 
-  if (upd) upd.textContent = '余额采集时间 ' + String(DATA.balancesFetchedAt || DATA.generatedAt || '').replace('T', ' ').slice(0, 19);
+  const age = balanceAgeInfo();
+  if (upd) {
+    upd.textContent = '余额采集时间 ' + (age.tsText || String(DATA.balancesFetchedAt || DATA.generatedAt || '').replace('T', ' ').slice(0, 19));
+    upd.classList.toggle('stale', age.stale);
+  }
+  const staleBanner = el('bal-stale');
+  if (staleBanner) {
+    if (age.stale) {
+      staleBanner.textContent = '⚠️ 余额数据已过时 ' + age.ageText + '（最后采集 ' + age.tsText + '），下方数值非实时、可能已不准确 —— 请在「终端」启动调试 Chrome 后重新采集。';
+      staleBanner.classList.add('show');
+    } else {
+      staleBanner.classList.remove('show');
+    }
+  }
 
   box.innerHTML = list.map(b => {
     const avail = Number(b.available);
@@ -763,13 +810,13 @@ function renderHomeBalances() {
       sub.push('欠费 ' + (b.arrearCount === null || b.arrearCount === undefined ? '—' : b.arrearCount) + ' 笔');
     }
     return `
-      <div class="bal-card ${cls}${neg ? ' neg' : ''}">
+      <div class="bal-card ${cls}${neg ? ' neg' : ''}${age.stale ? ' stale' : ''}">
         <div class="bal-head">
           <span class="bal-name">${b.name || '—'}</span>
           <span class="bal-acct mono">${b.account || ''}</span>
         </div>
         <div class="bal-amount">${fmtMoney(b.available, b.currency)}<span class="bal-cur">${b.currency || ''}</span></div>
-        <div class="bal-sub">${sub.join(' · ')}</div>
+        <div class="bal-sub">${age.stale ? '⚠️ 已过时 ' + age.ageText + ' · ' : ''}${sub.join(' · ')}</div>
       </div>`;
   }).join('');
 
@@ -887,6 +934,10 @@ function renderBalanceView() {
   const hist = (DATA && DATA.balanceHistory) || [];
   const fetchedAt = String((DATA && DATA.balancesFetchedAt) || '').replace('T', ' ').slice(0, 19);
   const mainCur = (list.find(b => b.source === '4px') || {}).currency || 'USD';
+  const age = balanceAgeInfo();
+  const staleHtml = age.stale
+    ? `<div class="bd-stale">⚠️ 余额数据已过时 ${age.ageText}（最后采集 ${age.tsText}），下方数值非实时、可能已不准确 —— 请在本机「终端」启动调试 Chrome 后重新采集。</div>`
+    : '';
 
   if (!list.length) {
     box.innerHTML = `<div class="card"><div class="empty"><div class="big">💰</div>暂无余额数据
@@ -966,7 +1017,7 @@ function renderBalanceView() {
         </div>`
       : `<div class="bd-spark"><div class="lbl"><span>趋势</span><span>数据积累中（每天采集后自动生成折线）</span></div></div>`;
 
-    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : (isCk ? 'ck' : (isYt ? 'yt' : (b.source === 'eccang' ? 'ec' : 'px'))))}${low ? ' neg' : ' ok'}">
+    return `<div class="bd-card ${isYw ? 'yw' : (isHh ? 'hh' : (isCk ? 'ck' : (isYt ? 'yt' : (b.source === 'eccang' ? 'ec' : 'px'))))}${low ? ' neg' : ' ok'}${age.stale ? ' stale' : ''}">
       <div class="bd-head">
         <span class="nm">${esc(b.name)}</span>
         <span class="acct">${esc(b.account || '')}</span>
@@ -975,7 +1026,7 @@ function renderBalanceView() {
         <span class="bd-chip ${low ? 'warn' : 'ok'}">${low ? '低于阈值' : '正常'}</span>
       </div>
       <div class="bd-amount">${fmtMoney(b.available, b.currency)}<span class="cur">${esc(b.currency || '')} ${isHh ? '运费余额' : '可用余额'}</span></div>
-      <div class="bd-sub">采集时间 ${esc(fetchedAt || '—')}${b.carriedOver ? ' · <span style="color:#f59e0b">⚠️ 本次抓取失败，沿用上次值</span>' : ''}</div>
+      <div class="bd-sub">${age.stale ? '⚠️ 已过时 ' + age.ageText + ' · ' : ''}采集时间 ${esc(fetchedAt || '—')}${b.carriedOver ? ' · <span style="color:#f59e0b">⚠️ 本次抓取失败，沿用上次值</span>' : ''}</div>
       <div class="bd-fields">${fields.map(([k, v]) =>
         `<div class="bd-field"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
       ${curTable}
@@ -1000,7 +1051,7 @@ function renderBalanceView() {
     </div>
   </div>`;
 
-  box.innerHTML = alertHtml + `<div class="bd-grid">${cards}</div>` + metaCard;
+  box.innerHTML = staleHtml + alertHtml + `<div class="bd-grid">${cards}</div>` + metaCard;
 }
 
 function renderNavCounts() {
